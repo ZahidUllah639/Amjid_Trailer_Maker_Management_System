@@ -21,10 +21,18 @@ import '../database/database.dart';
 part 'erp_state.dart';
 
 class ERPCubit extends Cubit<ERPState> {
-  final AppDatabase _db = AppDatabase();
+  AppDatabase _db = AppDatabase();
 
   ERPCubit() : super(ERPState.initial()) {
     loadData();
+  }
+
+  Future<void> reloadAfterRestore() async {
+    try {
+      await _db.close();
+    } catch (_) {}
+    _db = AppDatabase();
+    await loadData();
   }
 
   void setModuleIndex(int index) {

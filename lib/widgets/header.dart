@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:window_manager/window_manager.dart';
 import '../cubits/erp_cubit.dart';
+import 'backup_restore_dialog.dart';
 
 class Header extends StatefulWidget {
   const Header({super.key});
@@ -173,7 +175,37 @@ class _HeaderState extends State<Header> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
+
+              // Enterprise Backup Button
+              InkWell(
+                onTap: () => BackupRestoreDialog.show(context),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFC7D2FE)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.cloud_sync_rounded, size: 16, color: Color(0xFF4F46E5)),
+                      SizedBox(width: 6),
+                      Text(
+                        'Backup',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF4338CA),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
 
               // Admin Avatar & Name
               Container(
@@ -218,6 +250,13 @@ class _HeaderState extends State<Header> {
                   ],
                 ),
               ),
+
+              const SizedBox(width: 14),
+              Container(width: 1, height: 26, color: const Color(0xFFE2E8F0)),
+              const SizedBox(width: 10),
+
+              // Desktop Window Corner Controls (Minimize, Maximize, Exit)
+              const _WindowControlButtons(),
             ],
           ),
         );
@@ -225,4 +264,139 @@ class _HeaderState extends State<Header> {
     );
   }
 }
+
+class _WindowControlButtons extends StatefulWidget {
+  const _WindowControlButtons();
+
+  @override
+  State<_WindowControlButtons> createState() => _WindowControlButtonsState();
+}
+
+class _WindowControlButtonsState extends State<_WindowControlButtons> {
+  bool _isMaximized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkMaximizedState();
+  }
+
+  Future<void> _checkMaximizedState() async {
+    try {
+      final max = await windowManager.isMaximized();
+      if (mounted) setState(() => _isMaximized = max);
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Minimize Button
+        _WindowHoverButton(
+          icon: Icons.remove_rounded,
+          tooltip: 'Minimize',
+          onTap: () async => await windowManager.minimize(),
+        ),
+        const SizedBox(width: 2),
+
+        // Maximize / Restore Button
+        _WindowHoverButton(
+          icon: _isMaximized ? Icons.filter_none_rounded : Icons.crop_square_rounded,
+          tooltip: _isMaximized ? 'Restore Down' : 'Maximize',
+          iconSize: _isMaximized ? 14 : 16,
+          onTap: () async {
+            final isMax = await windowManager.isMaximized();
+            if (isMax) {
+              await windowManager.unmaximize();
+              if (mounted) setState(() => _isMaximized = false);
+            } else {
+              await windowManager.maximize();
+              if (mounted) setState(() => _isMaximized = true);
+            }
+          },
+        ),
+        const SizedBox(width: 2),
+
+        // Exit / Close Button (Windows style red hover)
+        _WindowHoverButton(
+          icon: Icons.close_rounded,
+          tooltip: 'Close Application',
+          isClose: true,
+          onTap: () async => await windowManager.close(),
+        ),
+      ],
+    );
+  }
+}
+
+class _WindowHoverButton extends StatefulWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  final bool isClose;
+  final double iconSize;
+
+  const _WindowHoverButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.isClose = false,
+    this.iconSize = 16,
+  });
+
+  @override
+  State<_WindowHoverButton> createState() => _WindowHoverButtonState();
+}
+
+class _WindowHoverButtonState extends State<_WindowHoverButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    Color bg = Colors.transparent;
+    Color iconColor = const Color(0xFF64748B);
+
+    if (_isHovered) {
+      if (widget.isClose) {
+        bg = const Color(0xFFE11D48);
+        iconColor = Colors.white;
+      } else {
+        bg = const Color(0xFFF1F5F9);
+        iconColor = const Color(0xFF0F172A);
+      }
+    }
+
+    return Tooltip(
+      message: widget.tooltip,
+      waitDuration: const Duration(milliseconds: 400),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            width: 34,
+            height: 32,
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Icon(
+                widget.icon,
+                size: widget.iconSize,
+                color: iconColor,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 

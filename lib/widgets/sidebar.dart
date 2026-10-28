@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:window_manager/window_manager.dart';
 import 'add_khata_dialog.dart';
 
 /// A world-class, glassmorphic desktop navigation sidebar for Amjid Trailer Makers ERP.
@@ -64,46 +63,46 @@ class Sidebar extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionHeader('EXECUTIVE COMMAND'),
+                        _buildSectionHeader('MAIN NAVIGATION'),
                         _GlassSidebarItem(
-                          icon: Icons.grid_view_rounded,
-                          label: 'Executive Command',
-                          subtitle: 'Live KPI & Analytics',
+                          icon: Icons.dashboard_rounded,
+                          label: 'Dashboard',
+                          subtitle: 'Live KPI & Overview',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 0,
                           onTap: () => onIndexChanged(0),
                         ),
                         _GlassSidebarItem(
-                          icon: Icons.precision_manufacturing_rounded,
-                          label: 'Fleet & Manufacturing',
-                          subtitle: 'Traila Units & Register',
+                          icon: Icons.local_shipping_rounded,
+                          label: 'Trailas',
+                          subtitle: 'Fleet & Build Units',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 1,
                           onTap: () => onIndexChanged(1),
                         ),
 
                         const SizedBox(height: 16),
-                        _buildSectionHeader('COMMERCE & LEDGERS'),
+                        _buildSectionHeader('ACCOUNTS & PARTNERS'),
                         _GlassSidebarItem(
-                          icon: Icons.factory_rounded,
-                          label: 'Vendor Payables (Suppliers)',
-                          subtitle: 'Raw Materials & Parts',
+                          icon: Icons.storefront_rounded,
+                          label: 'Suppliers',
+                          subtitle: 'Vendors & Bills',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 2,
                           onTap: () => onIndexChanged(2),
                         ),
                         _GlassSidebarItem(
                           icon: Icons.engineering_rounded,
-                          label: 'Workforce & Payroll',
-                          subtitle: 'Labour Wages & Jobs',
+                          label: 'Labour',
+                          subtitle: 'Workforce & Wages',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 3,
                           onTap: () => onIndexChanged(3),
                         ),
                         _GlassSidebarItem(
-                          icon: Icons.account_balance_rounded,
-                          label: 'Customer Accounts (Khata)',
-                          subtitle: 'Receivables & Udhaar',
+                          icon: Icons.menu_book_rounded,
+                          label: 'Khata',
+                          subtitle: 'Customer Accounts',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 4,
                           onTap: () => onIndexChanged(4),
@@ -122,46 +121,46 @@ class Sidebar extends StatelessWidget {
                         ),
 
                         const SizedBox(height: 16),
-                        _buildSectionHeader('FINANCE & LIQUIDITY'),
+                        _buildSectionHeader('FINANCE & REVENUE'),
                         _GlassSidebarItem(
                           icon: Icons.receipt_long_rounded,
-                          label: 'Sales & Invoicing',
-                          subtitle: 'Dispatches & Receipts',
+                          label: 'Sales',
+                          subtitle: 'Invoices & Orders',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 5,
                           onTap: () => onIndexChanged(5),
                         ),
                         _GlassSidebarItem(
                           icon: Icons.insights_rounded,
-                          label: 'Revenue & Analytics',
-                          subtitle: 'P&L, Margins & Cashflow',
+                          label: 'Expense & Revenue',
+                          subtitle: 'P&L & Cash Flow',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 6,
                           onTap: () => onIndexChanged(6),
                         ),
                         _GlassSidebarItem(
-                          icon: Icons.account_balance_wallet_rounded,
-                          label: 'Treasury & Digital Vault',
-                          subtitle: 'Cash Drawers, Banks & Wallets',
+                          icon: Icons.account_balance_rounded,
+                          label: 'Cash & Bank',
+                          subtitle: 'Treasury & Vaults',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 7,
                           onTap: () => onIndexChanged(7),
                         ),
 
                         const SizedBox(height: 16),
-                        _buildSectionHeader('SYSTEM PREFERENCES'),
+                        _buildSectionHeader('CONFIGURATION'),
                         _GlassSidebarItem(
-                          icon: Icons.corporate_fare_rounded,
-                          label: 'Enterprise Identity',
-                          subtitle: 'Company Profile & Branding',
+                          icon: Icons.badge_rounded,
+                          label: 'App Profile',
+                          subtitle: 'Business Identity',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 8,
                           onTap: () => onIndexChanged(8),
                         ),
                         _GlassSidebarItem(
                           icon: Icons.print_rounded,
-                          label: 'Thermal & Hardware POS',
-                          subtitle: '58mm / 80mm ESC-POS Printer',
+                          label: 'Printer Settings',
+                          subtitle: 'POS & Thermal Hardware',
                           isCollapsed: isCollapsed,
                           isActive: selectedIndex == 9,
                           onTap: () => onIndexChanged(9),
@@ -207,32 +206,35 @@ class Sidebar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
         children: [
-          // Glass Floating Logo Capsule
+          // Glass Floating Logo Capsule with Real AI-Generated Logo
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: const Color(0xFF818CF8).withValues(alpha: 0.4),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.precision_manufacturing_rounded,
-              color: Colors.white,
-              size: 24,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10.5),
+              child: Image.asset(
+                'assets/images/Logo.png',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.local_shipping_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
             ),
           ),
           if (!isCollapsed) ...[
@@ -334,7 +336,7 @@ class Sidebar extends StatelessWidget {
                   color: const Color(0xFF94A3B8),
                   size: 20,
                 ),
-                tooltip: isCollapsed ? 'Expand Navigation' : 'Collapse Navigation',
+                tooltip: isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar',
                 onPressed: onToggle,
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.04),
@@ -342,30 +344,15 @@ class Sidebar extends StatelessWidget {
                 ),
               ),
               if (!isCollapsed)
-                InkWell(
-                  onTap: () async => await windowManager.close(),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.power_settings_new_rounded, size: 15, color: Color(0xFFF87171)),
-                        SizedBox(width: 6),
-                        Text(
-                          'Exit Kiosk',
-                          style: TextStyle(
-                            color: Color(0xFFF87171),
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                const Padding(
+                  padding: EdgeInsets.only(right: 6),
+                  child: Text(
+                    'ERP v3.0 Pro',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),

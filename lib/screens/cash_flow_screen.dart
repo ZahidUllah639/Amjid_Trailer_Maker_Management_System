@@ -196,46 +196,35 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
                   ),
                 )
               else
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final crossAxisCount = constraints.maxWidth > 1250
-                        ? 3
-                        : (constraints.maxWidth > 800 ? 2 : 1);
-                    return GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: displayAccounts.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 20,
-                        mainAxisSpacing: 20,
-                        childAspectRatio: 1.45,
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: displayAccounts.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final acc = displayAccounts[index];
+                    return _LinedVaultStrip(
+                      account: acc,
+                      onDeposit: () => _showQuickTxnDialog(
+                        context,
+                        account: acc,
+                        isCredit: true,
                       ),
-                      itemBuilder: (context, index) {
-                        return _LuxuriousVaultCard(
-                          account: displayAccounts[index],
-                          onDeposit: () => _showQuickTxnDialog(
-                            context,
-                            account: displayAccounts[index],
-                            isCredit: true,
+                      onWithdraw: () => _showQuickTxnDialog(
+                        context,
+                        account: acc,
+                        isCredit: false,
+                      ),
+                      onTransfer: () => _showTransferDialog(
+                        context,
+                        fromAccount: acc,
+                      ),
+                      onViewLedger: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AccountLedgerScreen(accountKey: acc.id),
                           ),
-                          onWithdraw: () => _showQuickTxnDialog(
-                            context,
-                            account: displayAccounts[index],
-                            isCredit: false,
-                          ),
-                          onTransfer: () => _showTransferDialog(
-                            context,
-                            fromAccount: displayAccounts[index],
-                          ),
-                          onViewLedger: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AccountLedgerScreen(accountKey: displayAccounts[index].id),
-                              ),
-                            );
-                          },
                         );
                       },
                     );
@@ -1224,14 +1213,14 @@ class _LiquiditySubCard extends StatelessWidget {
 }
 
 /// A World-Class Digital Obsidian / Sapphire / Amethyst Vault Card
-class _LuxuriousVaultCard extends StatefulWidget {
+class _LinedVaultStrip extends StatefulWidget {
   final Account account;
   final VoidCallback onDeposit;
   final VoidCallback onWithdraw;
   final VoidCallback onTransfer;
   final VoidCallback onViewLedger;
 
-  const _LuxuriousVaultCard({
+  const _LinedVaultStrip({
     required this.account,
     required this.onDeposit,
     required this.onWithdraw,
@@ -1240,295 +1229,212 @@ class _LuxuriousVaultCard extends StatefulWidget {
   });
 
   @override
-  State<_LuxuriousVaultCard> createState() => _LuxuriousVaultCardState();
+  State<_LinedVaultStrip> createState() => _LinedVaultStripState();
 }
 
-class _LuxuriousVaultCardState extends State<_LuxuriousVaultCard> {
+class _LinedVaultStripState extends State<_LinedVaultStrip> {
   bool _isHovered = false;
 
   bool get _isCash => widget.account.type.toLowerCase() == 'cash';
   bool get _isBank => widget.account.type.toLowerCase() == 'bank';
 
-  List<Color> _getGradientColors() {
-    if (_isCash) {
-      // Emerald Obsidian Metallic
-      return const [
-        Color(0xFF042F2E),
-        Color(0xFF064E3B),
-        Color(0xFF022C22),
-      ];
-    } else if (_isBank) {
-      // Titanium Midnight Sapphire
-      return const [
-        Color(0xFF0F172A),
-        Color(0xFF1E3A8A),
-        Color(0xFF0A192F),
-      ];
-    } else {
-      // Velvet Cosmic Amethyst
-      return const [
-        Color(0xFF3B0764),
-        Color(0xFF581C87),
-        Color(0xFF2E1065),
-      ];
-    }
-  }
-
-  Color _getAccentColor() {
-    if (_isCash) return const Color(0xFF10B981);
-    if (_isBank) return const Color(0xFF38BDF8);
-    return const Color(0xFFA855F7);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final accent = _getAccentColor();
-    final gradient = _getGradientColors();
     final currencyFormat = NumberFormat('#,##0');
+    final isNegative = widget.account.balance < 0;
+
+    final Color badgeBg = _isCash
+        ? const Color(0xFFECFDF5)
+        : (_isBank ? const Color(0xFFEFF6FF) : const Color(0xFFFAF5FF));
+    final Color badgeFg = _isCash
+        ? const Color(0xFF059669)
+        : (_isBank ? const Color(0xFF2563EB) : const Color(0xFF9333EA));
+    final IconData badgeIcon = _isCash
+        ? Icons.account_balance_wallet_rounded
+        : (_isBank ? Icons.account_balance_rounded : Icons.phone_android_rounded);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       cursor: SystemMouseCursors.click,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0.0, _isHovered ? -6.0 : 0.0, 0.0),
+        duration: const Duration(milliseconds: 180),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradient,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(22),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _isHovered
-                ? accent.withValues(alpha: 0.6)
-                : Colors.white.withValues(alpha: 0.14),
+            color: _isHovered ? badgeFg.withValues(alpha: 0.5) : const Color(0xFFE2E8F0),
             width: _isHovered ? 1.5 : 1.0,
           ),
           boxShadow: [
             BoxShadow(
               color: _isHovered
-                  ? accent.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.2),
-              blurRadius: _isHovered ? 24 : 12,
-              offset: Offset(0, _isHovered ? 12 : 6),
+                  ? badgeFg.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.03),
+              blurRadius: _isHovered ? 16 : 6,
+              offset: Offset(0, _isHovered ? 4 : 2),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: Stack(
-            children: [
-              // Subtle Decorative Watermark Pattern
-              Positioned(
-                right: -20,
-                bottom: -20,
-                child: Opacity(
-                  opacity: 0.06,
-                  child: Icon(
-                    _isCash
-                        ? Icons.payments_rounded
-                        : (_isBank ? Icons.account_balance_rounded : Icons.phone_android_rounded),
-                    size: 160,
-                    color: Colors.white,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onViewLedger,
+            borderRadius: BorderRadius.circular(16),
+            hoverColor: badgeBg.withValues(alpha: 0.25),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  // Icon Badge
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: badgeBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: badgeFg.withValues(alpha: 0.2)),
+                    ),
+                    child: Icon(badgeIcon, color: badgeFg, size: 24),
                   ),
-                ),
-              ),
+                  const SizedBox(width: 16),
 
-              // Card Content Area
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: widget.onViewLedger,
-                  borderRadius: BorderRadius.circular(22),
-                  child: Padding(
-                    padding: const EdgeInsets.all(22),
+                  // Account Details
+                  Expanded(
+                    flex: 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Top Row: Type Pill, Status & Card Chip / Icon
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: accent.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: accent.withValues(alpha: 0.4)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _isCash
-                                            ? Icons.lock_outline_rounded
-                                            : (_isBank ? Icons.contactless_rounded : Icons.bolt_rounded),
-                                        size: 13,
-                                        color: accent,
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        widget.account.type.toUpperCase(),
-                                        style: TextStyle(
-                                          color: accent,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: 0.8,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                            Flexible(
+                              child: Text(
+                                widget.account.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${widget.account.transactions.length} entries',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.6),
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-
-                            // Golden EMV Chip or Vault Lock Visual
-                            if (_isBank)
-                              Container(
-                                width: 34,
-                                height: 26,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFFFDE047), Color(0xFFCA8A04)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: const Color(0xFFEAB308)),
-                                ),
-                                child: Stack(
-                                  children: [
-                                    Center(
-                                      child: Container(
-                                        width: 14,
-                                        height: 10,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: Colors.black26),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            else
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  _isCash ? Icons.shield_rounded : Icons.wallet_rounded,
-                                  size: 18,
-                                  color: accent,
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: badgeFg.withValues(alpha: 0.3)),
+                              ),
+                              child: Text(
+                                widget.account.type.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: badgeFg,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
-                          ],
-                        ),
-
-                        // Middle: Account Name & Live Balance
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.account.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.2,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(
-                                  'Rs. ',
-                                  style: TextStyle(
-                                    color: accent,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                Text(
-                                  currencyFormat.format(widget.account.balance),
-                                  style: TextStyle(
-                                    color: widget.account.balance >= 0
-                                        ? Colors.white
-                                        : const Color(0xFFF87171),
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: -0.6,
-                                  ),
-                                ),
-                              ],
                             ),
                           ],
                         ),
-
-                        // Bottom: Quick-Action Control Bar (On-Card Ease!)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.25),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _CardActionButton(
-                                icon: Icons.arrow_downward_rounded,
-                                label: 'In',
-                                color: const Color(0xFF34D399),
-                                onTap: widget.onDeposit,
-                              ),
-                              _CardActionButton(
-                                icon: Icons.arrow_upward_rounded,
-                                label: 'Out',
-                                color: const Color(0xFFF87171),
-                                onTap: widget.onWithdraw,
-                              ),
-                              _CardActionButton(
-                                icon: Icons.swap_horiz_rounded,
-                                label: 'Transfer',
-                                color: const Color(0xFF38BDF8),
-                                onTap: widget.onTransfer,
-                              ),
-                              _CardActionButton(
-                                icon: Icons.arrow_outward_rounded,
-                                label: 'Ledger',
-                                color: Colors.white,
-                                onTap: widget.onViewLedger,
-                              ),
-                            ],
+                        const SizedBox(height: 3),
+                        Text(
+                          '${widget.account.transactions.length} transactions • Click to open account ledger',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
+
+                  // Balance Column
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'AVAILABLE BALANCE',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF94A3B8),
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Rs. ${currencyFormat.format(widget.account.balance)}',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            color: isNegative
+                                ? const Color(0xFFDC2626)
+                                : const Color(0xFF0F172A),
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 24),
+
+                  // Quick Action Buttons
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      _LinedActionButton(
+                        icon: Icons.add_rounded,
+                        label: 'In',
+                        color: const Color(0xFF059669),
+                        bgColor: const Color(0xFFECFDF5),
+                        borderColor: const Color(0xFFA7F3D0),
+                        tooltip: 'Deposit / Cash In',
+                        onTap: widget.onDeposit,
+                      ),
+                      _LinedActionButton(
+                        icon: Icons.remove_rounded,
+                        label: 'Out',
+                        color: const Color(0xFFDC2626),
+                        bgColor: const Color(0xFFFEF2F2),
+                        borderColor: const Color(0xFFFECACA),
+                        tooltip: 'Withdraw / Cash Out',
+                        onTap: widget.onWithdraw,
+                      ),
+                      _LinedActionButton(
+                        icon: Icons.swap_horiz_rounded,
+                        label: 'Transfer',
+                        color: const Color(0xFF2563EB),
+                        bgColor: const Color(0xFFEFF6FF),
+                        borderColor: const Color(0xFFBFDBFE),
+                        tooltip: 'Internal Vault Transfer',
+                        onTap: widget.onTransfer,
+                      ),
+                      _LinedActionButton(
+                        icon: Icons.receipt_long_rounded,
+                        label: 'Ledger',
+                        color: const Color(0xFF0F172A),
+                        bgColor: const Color(0xFFF1F5F9),
+                        borderColor: const Color(0xFFCBD5E1),
+                        tooltip: 'Open Full Statement',
+                        onTap: widget.onViewLedger,
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(width: 12),
+                  const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFFCBD5E1)),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -1536,40 +1442,54 @@ class _LuxuriousVaultCardState extends State<_LuxuriousVaultCard> {
   }
 }
 
-class _CardActionButton extends StatelessWidget {
+class _LinedActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final Color bgColor;
+  final Color borderColor;
+  final String tooltip;
   final VoidCallback onTap;
 
-  const _CardActionButton({
+  const _LinedActionButton({
     required this.icon,
     required this.label,
     required this.color,
+    required this.bgColor,
+    required this.borderColor,
+    required this.tooltip,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: borderColor),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

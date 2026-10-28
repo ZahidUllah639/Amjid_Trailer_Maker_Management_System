@@ -633,6 +633,7 @@ class SaleDetailScreen extends StatelessWidget {
           ),
           const Divider(height: 24),
           _InfoLine(
+            icon: Icons.qr_code_2_rounded,
             label: 'Customer ID / Code',
             value: buyer.id,
             isBold: true,
@@ -640,19 +641,20 @@ class SaleDetailScreen extends StatelessWidget {
             color: const Color(0xFF4F46E5),
           ),
           const SizedBox(height: 10),
-          _InfoLine(label: 'Full Name', value: buyer.name, isBold: true),
+          _InfoLine(icon: Icons.person_outline_rounded, label: 'Full Name', value: buyer.name, isBold: true),
           const SizedBox(height: 10),
-          _InfoLine(label: 'Phone Contact', value: buyer.phone.isEmpty ? '—' : buyer.phone),
+          _InfoLine(icon: Icons.phone_outlined, label: 'Phone Contact', value: buyer.phone.isEmpty ? '—' : buyer.phone),
           const SizedBox(height: 10),
           _InfoLine(
+            icon: Icons.chat_bubble_outline_rounded,
             label: 'WhatsApp',
             value: buyer.whatsappNumber.isEmpty ? 'Not Provided' : buyer.whatsappNumber,
             color: buyer.whatsappNumber.isNotEmpty ? const Color(0xFF059669) : null,
           ),
           const SizedBox(height: 10),
-          _InfoLine(label: 'National CNIC', value: buyer.cnic.isEmpty ? 'Not Provided' : buyer.cnic),
+          _InfoLine(icon: Icons.badge_outlined, label: 'National CNIC', value: buyer.cnic.isEmpty ? 'Not Provided' : buyer.cnic),
           const SizedBox(height: 10),
-          _InfoLine(label: 'Delivery Address', value: buyer.address.isEmpty ? 'Not Provided' : buyer.address),
+          _InfoLine(icon: Icons.local_shipping_outlined, label: 'Delivery Address', value: buyer.address.isEmpty ? 'Not Provided' : buyer.address),
         ],
       ),
     );
@@ -718,19 +720,21 @@ class SaleDetailScreen extends StatelessWidget {
             ],
           ),
           const Divider(height: 24),
-          _InfoLine(label: 'Traila Unit ID', value: sale.trailaId, isMonospace: true),
+          _InfoLine(icon: Icons.tag_rounded, label: 'Traila Unit ID', value: sale.trailaId, isMonospace: true),
           const SizedBox(height: 10),
-          _InfoLine(label: 'Unit Name / Spec', value: traila.name),
+          _InfoLine(icon: Icons.precision_manufacturing_rounded, label: 'Unit Name / Spec', value: traila.name),
           const SizedBox(height: 10),
-          _InfoLine(label: 'Sale Date', value: dateFormat.format(sale.saleDate)),
+          _InfoLine(icon: Icons.calendar_today_rounded, label: 'Sale Date', value: dateFormat.format(sale.saleDate)),
           const SizedBox(height: 10),
           _InfoLine(
+            icon: Icons.build_circle_outlined,
             label: 'Workshop Build Cost',
             value: 'Rs. ${currencyFormat.format(sale.manufacturingCost)}',
             color: const Color(0xFF64748B),
           ),
           const SizedBox(height: 10),
           _InfoLine(
+            icon: Icons.monetization_on_outlined,
             label: 'Contract Sale Price',
             value: 'Rs. ${currencyFormat.format(sale.salePrice)}',
             isBold: true,
@@ -967,6 +971,7 @@ class _InfoLine extends StatelessWidget {
   final Color? color;
   final bool isBold;
   final bool isMonospace;
+  final IconData? icon;
 
   const _InfoLine({
     required this.label,
@@ -974,29 +979,50 @@ class _InfoLine extends StatelessWidget {
     this.color,
     this.isBold = false,
     this.isMonospace = false,
+    this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w500)),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-            fontFamily: isMonospace ? 'Courier' : null,
-            color: color ?? const Color(0xFF0F172A),
-            fontSize: 13,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 15, color: const Color(0xFF64748B)),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label,
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 12.5, fontWeight: FontWeight.w600),
+              ),
+            ],
           ),
-        ),
-      ],
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.w800 : FontWeight.w700,
+              fontFamily: isMonospace ? 'Courier' : null,
+              color: color ?? const Color(0xFF0F172A),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _PaymentTile extends StatelessWidget {
+class _PaymentTile extends StatefulWidget {
   final Payment payment;
   final Sale sale;
   final Buyer buyer;
@@ -1014,138 +1040,169 @@ class _PaymentTile extends StatelessWidget {
   });
 
   @override
+  State<_PaymentTile> createState() => _PaymentTileState();
+}
+
+class _PaymentTileState extends State<_PaymentTile> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat('#,##0');
     final dateFormat = DateFormat('dd MMM yyyy');
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFDCFCE7),
-              borderRadius: BorderRadius.circular(12),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        decoration: BoxDecoration(
+          color: _isHovered ? const Color(0xFFF8FAFC) : Colors.white,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFA7F3D0)),
+              ),
+              child: const Icon(Icons.arrow_downward_rounded, color: Color(0xFF15803D), size: 18),
             ),
-            child: const Icon(Icons.arrow_downward_rounded, color: Color(0xFF15803D), size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Rs. ${currencyFormat.format(payment.amount)}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF10B981),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        payment.method.toUpperCase(),
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF475569)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Text(
-                      'Date: ${dateFormat.format(payment.date)}',
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                    ),
-                    if (payment.receiptNumber != null) ...[
-                      const SizedBox(width: 8),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
                       Text(
-                        '| Slip: ${payment.receiptNumber}',
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
+                        'Rs. ${currencyFormat.format(widget.payment.amount)}',
+                        style: const TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF059669),
+                          letterSpacing: -0.3,
+                        ),
                       ),
+                      const SizedBox(width: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                        ),
+                        child: Text(
+                          widget.payment.method.toUpperCase(),
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFF2563EB)),
+                        ),
+                      ),
+                      if (widget.payment.receiptNumber != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            widget.payment.receiptNumber!,
+                            style: const TextStyle(
+                              fontFamily: 'Courier',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Recorded on ${dateFormat.format(widget.payment.date)} • Payment Voucher Verified',
+                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    final state = context.read<ERPCubit>().state;
+                    try {
+                      final success = await ThermalPrinterService.printSalePayment(
+                        context,
+                        sale: widget.sale,
+                        buyer: widget.buyer,
+                        payment: widget.payment,
+                        trailaName: widget.traila.name,
+                        profile: state.appProfile,
+                        settings: state.printerSetting,
+                      );
+                      if (!success && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Failed to print payment receipt.')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.print_rounded, size: 17, color: Color(0xFF0284C7)),
+                  tooltip: 'Print Thermal Receipt',
+                ),
+                IconButton(
+                  onPressed: () async {
+                    if (widget.buyer.whatsappNumber.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('No WhatsApp number saved for this buyer.')),
+                      );
+                      return;
+                    }
+                    final state = context.read<ERPCubit>().state;
+                    try {
+                      await WhatsAppService.sendSalePaymentReceipt(
+                        phone: widget.buyer.whatsappNumber,
+                        sale: widget.sale,
+                        buyer: widget.buyer,
+                        payment: widget.payment,
+                        trailaName: widget.traila.name,
+                        profile: state.appProfile,
+                        paperSize: state.printerSetting.paperSize,
+                      );
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.chat_bubble_rounded, size: 17, color: Color(0xFF059669)),
+                  tooltip: 'Send via WhatsApp',
+                ),
+                IconButton(
+                  onPressed: widget.onEdit,
+                  icon: const Icon(Icons.edit_rounded, size: 17, color: Color(0xFF4F46E5)),
+                  tooltip: 'Edit Payment',
+                ),
+                IconButton(
+                  onPressed: widget.onDelete,
+                  icon: const Icon(Icons.delete_outline_rounded, size: 17, color: Color(0xFFEF4444)),
+                  tooltip: 'Delete Payment',
                 ),
               ],
             ),
-          ),
-          IconButton(
-            onPressed: () async {
-              final state = context.read<ERPCubit>().state;
-              try {
-                final success = await ThermalPrinterService.printSalePayment(
-                  context,
-                  sale: sale,
-                  buyer: buyer,
-                  payment: payment,
-                  trailaName: traila.name,
-                  profile: state.appProfile,
-                  settings: state.printerSetting,
-                );
-                if (!success && context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Failed to print payment receipt.')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-                  );
-                }
-              }
-            },
-            icon: const Icon(Icons.print_rounded, size: 18, color: Color(0xFF0284C7)),
-            tooltip: 'Print Thermal Receipt',
-          ),
-          IconButton(
-            onPressed: () async {
-              if (buyer.whatsappNumber.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No WhatsApp number saved for this buyer.')),
-                );
-                return;
-              }
-              final state = context.read<ERPCubit>().state;
-              try {
-                await WhatsAppService.sendSalePaymentReceipt(
-                  phone: buyer.whatsappNumber,
-                  sale: sale,
-                  buyer: buyer,
-                  payment: payment,
-                  trailaName: traila.name,
-                  profile: state.appProfile,
-                  paperSize: state.printerSetting.paperSize,
-                );
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-                }
-              }
-            },
-            icon: const Icon(Icons.chat_bubble_rounded, size: 18, color: Color(0xFF059669)),
-            tooltip: 'Send via WhatsApp',
-          ),
-          IconButton(
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_rounded, size: 18, color: Color(0xFF4F46E5)),
-            tooltip: 'Edit Payment',
-          ),
-          IconButton(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFEF4444)),
-            tooltip: 'Delete Payment',
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

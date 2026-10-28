@@ -40,35 +40,35 @@ class _CinematicIntroOverlayState extends State<CinematicIntroOverlay> with Tick
   void initState() {
     super.initState();
 
-    // 1. Master Sequence Controller (3.6 seconds total)
+    // 1. Fast, Snappy Master Sequence Controller (1.1 seconds total)
     _masterController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 3600),
+      duration: const Duration(milliseconds: 1150),
     );
 
     // 2. Pulse Controller for glowing shockwaves
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1000),
     )..repeat();
 
     // 3. Progress bar 0% -> 100%
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2800),
+      duration: const Duration(milliseconds: 920),
     );
 
     // Logo pop-in with bounce
-    _logoScale = Tween<double>(begin: 0.4, end: 1.0).animate(
+    _logoScale = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(
         parent: _masterController,
-        curve: const Interval(0.0, 0.35, curve: Curves.easeOutBack),
+        curve: const Interval(0.0, 0.40, curve: Curves.easeOutBack),
       ),
     );
     _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _masterController,
-        curve: const Interval(0.0, 0.25, curve: Curves.easeOut),
+        curve: const Interval(0.0, 0.28, curve: Curves.easeOut),
       ),
     );
 
@@ -76,13 +76,13 @@ class _CinematicIntroOverlayState extends State<CinematicIntroOverlay> with Tick
     _titleOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _masterController,
-        curve: const Interval(0.2, 0.5, curve: Curves.easeOut),
+        curve: const Interval(0.18, 0.48, curve: Curves.easeOut),
       ),
     );
-    _titleSlide = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero).animate(
+    _titleSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
       CurvedAnimation(
         parent: _masterController,
-        curve: const Interval(0.2, 0.5, curve: Curves.easeOutCubic),
+        curve: const Interval(0.18, 0.48, curve: Curves.easeOutCubic),
       ),
     );
 
@@ -90,7 +90,7 @@ class _CinematicIntroOverlayState extends State<CinematicIntroOverlay> with Tick
     _telemetryOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _masterController,
-        curve: const Interval(0.4, 0.65, curve: Curves.easeIn),
+        curve: const Interval(0.30, 0.60, curve: Curves.easeIn),
       ),
     );
 
@@ -98,12 +98,12 @@ class _CinematicIntroOverlayState extends State<CinematicIntroOverlay> with Tick
     _fadeAllOut = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _masterController,
-        curve: const Interval(0.85, 1.0, curve: Curves.easeInOutCubic),
+        curve: const Interval(0.78, 1.0, curve: Curves.easeInOutCubic),
       ),
     );
 
-    // Cycle through boot telemetry logs
-    _telemetryTimer = Timer.periodic(const Duration(milliseconds: 650), (timer) {
+    // Fast cycle through boot telemetry logs
+    _telemetryTimer = Timer.periodic(const Duration(milliseconds: 180), (timer) {
       if (mounted && _telemetryStep < _telemetryLogs.length - 1) {
         setState(() => _telemetryStep++);
       } else {
@@ -146,9 +146,12 @@ class _CinematicIntroOverlayState extends State<CinematicIntroOverlay> with Tick
 
         return FadeTransition(
           opacity: _fadeAllOut,
-          child: Material(
-            color: Colors.transparent,
-            child: Stack(
+          child: GestureDetector(
+            onTap: _skip,
+            behavior: HitTestBehavior.opaque,
+            child: Material(
+              color: Colors.transparent,
+              child: Stack(
               children: [
                 // 1. Deep Obsidian Cosmic Background
                 Container(
@@ -506,8 +509,9 @@ class _CinematicIntroOverlayState extends State<CinematicIntroOverlay> with Tick
               ],
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 }
