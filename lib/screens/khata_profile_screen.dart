@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../models/khata.dart';
@@ -691,16 +692,32 @@ class _KhataProfileScreenState extends State<KhataProfileScreen> {
                       ],
                     ),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: filtered.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final txn = filtered[index];
-                      final isOut = txn.type == KhataTransactionType.cashOut;
-                      final runBal = runningBalances[txn.id] ?? 0.0;
-                      return _buildTransactionCard(context, txn, isOut, runBal);
-                    },
+                : Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListView.separated(
+                      padding: EdgeInsets.zero,
+                      itemCount: filtered.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      itemBuilder: (context, index) {
+                        final txn = filtered[index];
+                        final isOut = txn.type == KhataTransactionType.cashOut;
+                        final runBal = runningBalances[txn.id] ?? 0.0;
+                        return _buildTransactionRow(context, khata, txn, isOut, runBal);
+                      },
+                    ),
                   ),
           ),
         ],
@@ -708,127 +725,141 @@ class _KhataProfileScreenState extends State<KhataProfileScreen> {
     );
   }
 
-  Widget _buildTransactionCard(BuildContext context, KhataTransaction txn, bool isOut, double runningBalance) {
+  Widget _buildTransactionRow(BuildContext context, Khata khata, KhataTransaction txn, bool isOut, double runningBalance) {
     final bgBadge = isOut ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4);
     final borderBadge = isOut ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7);
     final textColor = isOut ? const Color(0xFFDC2626) : const Color(0xFF16A34A);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.015),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: bgBadge,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: borderBadge),
+    return InkWell(
+      onTap: () => _showTransactionDetailModal(context, khata, txn, isOut, runningBalance),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: bgBadge,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: borderBadge),
+              ),
+              child: Icon(
+                isOut ? Icons.arrow_outward_rounded : Icons.arrow_downward_rounded,
+                color: textColor,
+                size: 18,
+              ),
             ),
-            child: Icon(
-              isOut ? Icons.arrow_outward_rounded : Icons.arrow_downward_rounded,
-              color: textColor,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: bgBadge,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        isOut ? 'GAVE / OUT' : 'GOT / RECEIVED',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                    if (txn.paymentMethod != null && txn.paymentMethod!.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          txn.paymentMethod!,
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  txn.description ?? (isOut ? 'Gave money / Debit' : 'Received payment / Credit'),
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  DateFormat('dd MMM yyyy, hh:mm a').format(txn.date),
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${isOut ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(txn.amount)}',
+            const SizedBox(width: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+              decoration: BoxDecoration(
+                color: bgBadge,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: borderBadge),
+              ),
+              child: Text(
+                isOut ? 'GAVE / OUT' : 'GOT / RECEIVED',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
                   color: textColor,
                 ),
               ),
-              const SizedBox(height: 4),
-              _buildKhataBalanceBadge(runningBalance),
-            ],
-          ),
-          const SizedBox(width: 8),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF3B82F6)),
-                onPressed: () => _showEditTransactionDialog(context, txn),
-                tooltip: 'Edit Record',
-                visualDensity: VisualDensity.compact,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
-                onPressed: () => _showDeleteTransactionConfirmation(context, txn),
-                tooltip: 'Delete Record',
-                visualDensity: VisualDensity.compact,
+            ),
+            if (txn.paymentMethod != null && txn.paymentMethod!.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  txn.paymentMethod!,
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                ),
               ),
             ],
-          ),
-        ],
+            const SizedBox(width: 14),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.access_time_rounded, size: 12, color: Colors.grey.shade400),
+                const SizedBox(width: 4),
+                Text(
+                  DateFormat('dd MMM yyyy, hh:mm a').format(txn.date),
+                  style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                txn.description ?? (isOut ? 'Gave money / Debit' : 'Received payment / Credit'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${isOut ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(txn.amount)}',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                _buildKhataBalanceBadge(runningBalance),
+              ],
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('View', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+                  SizedBox(width: 3),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF94A3B8)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTransactionDetailModal(BuildContext context, Khata khata, KhataTransaction txn, bool isOut, double runningBalance) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (context) => _KhataRecordDetailModal(
+        khata: khata,
+        txn: txn,
+        isOut: isOut,
+        runningBalance: runningBalance,
+        onEdit: () {
+          Navigator.pop(context);
+          _showEditTransactionDialog(context, txn);
+        },
+        onDelete: () {
+          Navigator.pop(context);
+          _showDeleteTransactionConfirmation(context, txn);
+        },
       ),
     );
   }
@@ -1322,3 +1353,622 @@ class _KhataProfileScreenState extends State<KhataProfileScreen> {
     );
   }
 }
+
+class _KhataRecordDetailModal extends StatefulWidget {
+  final Khata khata;
+  final KhataTransaction txn;
+  final bool isOut;
+  final double runningBalance;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _KhataRecordDetailModal({
+    required this.khata,
+    required this.txn,
+    required this.isOut,
+    required this.runningBalance,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_KhataRecordDetailModal> createState() => _KhataRecordDetailModalState();
+}
+
+class _KhataRecordDetailModalState extends State<_KhataRecordDetailModal> {
+  bool _isExpanded = false;
+  bool _copied = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final txn = widget.txn;
+    final isOut = widget.isOut;
+    final accentColor = isOut ? const Color(0xFFDC2626) : const Color(0xFF16A34A);
+    final previousBalance = widget.runningBalance - (isOut ? txn.amount : -txn.amount);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOutCubic,
+        width: _isExpanded ? 900 : 640,
+        constraints: const BoxConstraints(maxHeight: 760),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 36,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. Executive Modal Titlebar with Minimize, Maximize, and Close Buttons
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isOut ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
+                  border: Border(
+                    bottom: BorderSide(color: isOut ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: isOut ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isOut ? const Color(0xFFFECACA) : const Color(0xFF86EFAC),
+                        ),
+                      ),
+                      child: Icon(
+                        isOut ? Icons.arrow_outward_rounded : Icons.arrow_downward_rounded,
+                        color: accentColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                isOut ? 'Cash Out Voucher (Debit)' : 'Cash In Voucher (Credit)',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+                                ),
+                                child: Text(
+                                  txn.id.length > 8 ? txn.id.substring(txn.id.length - 8).toUpperCase() : txn.id,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: accentColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            DateFormat('EEEE, dd MMM yyyy • hh:mm a').format(txn.date),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Dedicated Window Controls (Minimize, Maximize, Close)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Minimize / Dismiss
+                          Tooltip(
+                            message: 'Minimize / Dismiss',
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 30,
+                                height: 26,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.remove_rounded, size: 16, color: Color(0xFF64748B)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+
+                          // Maximize / Restore
+                          Tooltip(
+                            message: _isExpanded ? 'Restore View' : 'Maximize View',
+                            child: InkWell(
+                              onTap: () => setState(() => _isExpanded = !_isExpanded),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 30,
+                                height: 26,
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  _isExpanded ? Icons.filter_none_rounded : Icons.crop_square_rounded,
+                                  size: _isExpanded ? 13 : 15,
+                                  color: const Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+
+                          // Close Cross
+                          Tooltip(
+                            message: 'Close',
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 30,
+                                height: 26,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF64748B)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 2. Scrollable Body
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 3-Stage Financial Impact Breakdown
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          children: [
+                            // Step 1: Previous Due
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'BALANCE BEFORE',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Rs. ${NumberFormat("#,##0").format(previousBalance.abs())}',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: previousBalance > 0.01
+                                          ? const Color(0xFFB45309)
+                                          : previousBalance < -0.01
+                                              ? const Color(0xFF047857)
+                                              : const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  Text(
+                                    previousBalance > 0.01 ? 'Receivable' : (previousBalance < -0.01 ? 'Advance' : 'Settled'),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Math Operator
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: accentColor.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isOut ? Icons.add_rounded : Icons.remove_rounded,
+                                size: 16,
+                                color: accentColor,
+                              ),
+                            ),
+
+                            // Step 2: Transaction Amount
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    isOut ? 'CASH OUT (GAVE)' : 'CASH IN (GOT)',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                      color: accentColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Rs. ${NumberFormat("#,##0").format(txn.amount)}',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      color: accentColor,
+                                      letterSpacing: -0.3,
+                                    ),
+                                  ),
+                                  Text(
+                                    txn.paymentMethod ?? 'Cash',
+                                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.grey.shade500),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Math Equal
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFE2E8F0),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.drag_handle_rounded, size: 16, color: Color(0xFF475569)),
+                            ),
+
+                            // Step 3: Running Balance
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  const Text(
+                                    'NET BALANCE AFTER',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Rs. ${NumberFormat("#,##0").format(widget.runningBalance.abs())}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: widget.runningBalance > 0.01
+                                          ? const Color(0xFFDC2626)
+                                          : widget.runningBalance < -0.01
+                                              ? const Color(0xFF16A34A)
+                                              : const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  Text(
+                                    widget.runningBalance > 0.01
+                                        ? 'Receivable (Due)'
+                                        : (widget.runningBalance < -0.01 ? 'Advance (Paid)' : 'Fully Settled'),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: widget.runningBalance > 0.01
+                                          ? const Color(0xFFDC2626)
+                                          : widget.runningBalance < -0.01
+                                              ? const Color(0xFF16A34A)
+                                              : const Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Key Details 2x2 Grid
+                      const Text(
+                        'TRANSACTION SPECIFICATIONS',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDetailCell(
+                                    icon: Icons.person_outline_rounded,
+                                    label: 'Party / Account',
+                                    value: widget.khata.personName,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: _buildDetailCell(
+                                    icon: Icons.account_balance_wallet_outlined,
+                                    label: 'Payment Method',
+                                    value: txn.paymentMethod ?? 'Cash',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDetailCell(
+                                    icon: Icons.sync_rounded,
+                                    label: 'Ledger Synchronization',
+                                    value: txn.syncToAccount ? 'Synced to Business Account' : 'Ledger Record Only',
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: _buildDetailCell(
+                                    icon: Icons.fingerprint_rounded,
+                                    label: 'System Reference ID',
+                                    value: txn.id,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Description / Remarks Card
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'DESCRIPTION & REMARKS',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
+                          if (txn.description != null && txn.description!.isNotEmpty)
+                            InkWell(
+                              onTap: () {
+                                Clipboard.setData(ClipboardData(text: txn.description!));
+                                setState(() => _copied = true);
+                                Future.delayed(const Duration(seconds: 2), () {
+                                  if (mounted) setState(() => _copied = false);
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(4),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _copied ? Icons.check_rounded : Icons.copy_rounded,
+                                      size: 13,
+                                      color: _copied ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      _copied ? 'Copied' : 'Copy Remarks',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: _copied ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          (txn.description != null && txn.description!.trim().isNotEmpty)
+                              ? txn.description!
+                              : (isOut ? 'Cash given / debit recorded.' : 'Cash received / credit recorded.'),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF334155),
+                            height: 1.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 3. Action Footer
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8FAFC),
+                  border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: Row(
+                  children: [
+                    // Delete Button
+                    OutlinedButton.icon(
+                      onPressed: widget.onDelete,
+                      icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+                      label: const Text('Delete Entry', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w700)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFFECACA)),
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Edit Button
+                    OutlinedButton.icon(
+                      onPressed: widget.onEdit,
+                      icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF475569)),
+                      label: const Text('Edit Entry', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    const Spacer(),
+
+                    // Thermal Receipt (58/80mm) Print
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        final cubit = context.read<ERPCubit>();
+                        ThermalPrinterService.printKhataLedger(
+                          context,
+                          khata: widget.khata,
+                          profile: cubit.state.appProfile,
+                          settings: cubit.state.printerSetting,
+                          printDuplicate: true,
+                        );
+                      },
+                      icon: const Icon(Icons.receipt_long_rounded, size: 16),
+                      label: const Text('Thermal Receipt', style: TextStyle(fontWeight: FontWeight.w700)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F172A),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Close Button
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailCell({required IconData icon, required String label, required String value}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Icon(icon, size: 16, color: const Color(0xFF475569)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+

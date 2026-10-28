@@ -224,11 +224,11 @@ class Sidebar extends StatelessWidget {
                 ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10.5),
+            child: Padding(
+              padding: const EdgeInsets.all(3),
               child: Image.asset(
                 'assets/images/Logo.png',
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => const Icon(
                   Icons.local_shipping_rounded,
                   color: Colors.white,

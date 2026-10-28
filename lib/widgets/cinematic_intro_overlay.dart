@@ -275,10 +275,11 @@ class _CinematicIntroOverlayState extends State<CinematicIntroOverlay> with Tick
                                     ),
                                   ],
                                 ),
-                                child: ClipOval(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
                                   child: Image.asset(
                                     'assets/images/Logo.png',
-                                    fit: BoxFit.cover,
+                                    fit: BoxFit.contain,
                                     errorBuilder: (context, error, stackTrace) => const Icon(
                                       Icons.precision_manufacturing_rounded,
                                       color: Color(0xFF818CF8),

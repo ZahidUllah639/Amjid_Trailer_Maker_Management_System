@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../cubits/erp_cubit.dart';
@@ -828,14 +829,30 @@ class _UnifiedLabourLedgerState extends State<_UnifiedLabourLedger> {
                       ],
                     ),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: filtered.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final item = filtered[index];
-                      return _buildLedgerCard(context, item);
-                    },
+                : Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.02),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListView.separated(
+                      padding: EdgeInsets.zero,
+                      itemCount: filtered.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                      itemBuilder: (context, index) {
+                        final item = filtered[index];
+                        return _buildLedgerCard(context, item);
+                      },
+                    ),
                   ),
           ),
         ],
@@ -844,7 +861,7 @@ class _UnifiedLabourLedgerState extends State<_UnifiedLabourLedger> {
   }
 
   Widget _buildLedgerCard(BuildContext context, _LabourLedgerRow item) {
-    return _ModernLabourLedgerCard(
+    return _ModernLabourLedgerRow(
       item: item,
       labour: widget.labour,
       onDeleteWork: (id) => _showDeleteWorkDialog(context, id),
@@ -897,13 +914,13 @@ class _UnifiedLabourLedgerState extends State<_UnifiedLabourLedger> {
   }
 }
 
-class _ModernLabourLedgerCard extends StatefulWidget {
+class _ModernLabourLedgerRow extends StatefulWidget {
   final _LabourLedgerRow item;
   final Labour labour;
   final ValueChanged<String> onDeleteWork;
   final ValueChanged<String> onDeletePayment;
 
-  const _ModernLabourLedgerCard({
+  const _ModernLabourLedgerRow({
     required this.item,
     required this.labour,
     required this.onDeleteWork,
@@ -911,339 +928,833 @@ class _ModernLabourLedgerCard extends StatefulWidget {
   });
 
   @override
-  State<_ModernLabourLedgerCard> createState() => _ModernLabourLedgerCardState();
+  State<_ModernLabourLedgerRow> createState() => _ModernLabourLedgerRowState();
 }
 
-class _ModernLabourLedgerCardState extends State<_ModernLabourLedgerCard> {
+class _ModernLabourLedgerRowState extends State<_ModernLabourLedgerRow> {
   bool _isHovered = false;
+
+  void _showDetailModal() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (context) => _LabourRecordDetailModal(
+        item: widget.item,
+        labour: widget.labour,
+        onDeleteWork: widget.onDeleteWork,
+        onDeletePayment: widget.onDeletePayment,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
     final isWork = item.isWork;
-    final accentColor = isWork ? const Color(0xFF2563EB) : const Color(0xFF10B981);
-    final borderColor = _isHovered
-        ? accentColor.withValues(alpha: 0.45)
-        : (isWork ? const Color(0xFFE2E8F0) : const Color(0xFFDCFCE7));
+    final accentColor = isWork ? const Color(0xFF2563EB) : const Color(0xFF16A34A);
 
     return MouseRegion(
+      cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        transform: Matrix4.translationValues(0.0, _isHovered ? -2.0 : 0.0, 0.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: borderColor, width: _isHovered ? 1.5 : 1.0),
-          boxShadow: [
-            BoxShadow(
-              color: _isHovered
-                  ? accentColor.withValues(alpha: 0.12)
-                  : Colors.black.withValues(alpha: 0.025),
-              blurRadius: _isHovered ? 14 : 6,
-              offset: Offset(0, _isHovered ? 4 : 2),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: InkWell(
+        onTap: _showDetailModal,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          decoration: BoxDecoration(
+            color: _isHovered ? const Color(0xFFF8FAFC) : Colors.white,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 1. Top Identity Row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: isWork
-                            ? [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)]
-                            : [const Color(0xFFF0FDF4), const Color(0xFFDCFCE7)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isWork ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
-                      ),
-                    ),
-                    child: Icon(
-                      isWork ? Icons.engineering_rounded : Icons.payments_rounded,
-                      color: isWork ? const Color(0xFF1D4ED8) : const Color(0xFF15803D),
-                      size: 22,
-                    ),
+              // 1. Compact Icon
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: isWork ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isWork ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
                   ),
-                  const SizedBox(width: 14),
+                ),
+                child: Icon(
+                  isWork ? Icons.engineering_rounded : Icons.payments_rounded,
+                  color: accentColor,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 14),
 
-                  // Header Titles & Reference
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: isWork ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: isWork ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
-                                ),
-                              ),
-                              child: Text(
-                                isWork ? 'WORK LOG ENTRY' : 'WAGE PAYMENT',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.6,
-                                  color: isWork ? const Color(0xFF1E40AF) : const Color(0xFF15803D),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              item.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 16,
-                                color: Color(0xFF0F172A),
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                            if (item.work?.trailaId != null && item.work!.trailaId!.isNotEmpty) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.local_shipping_outlined, size: 12, color: Color(0xFF475569)),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Traila #${item.work!.trailaId}',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFF334155),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 5),
-                        Row(
-                          children: [
-                            Icon(Icons.access_time_rounded, size: 13, color: Colors.grey.shade500),
-                            const SizedBox(width: 4),
-                            Text(
-                              DateFormat('dd MMM yyyy, hh:mm a').format(item.date),
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '• ${item.subtitle}',
-                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+              // 2. Type Pill & Title / Invoice Code
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: isWork ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isWork ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
                   ),
+                ),
+                child: Text(
+                  isWork ? 'WORK LOG' : 'WAGE PAY',
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                    color: isWork ? const Color(0xFF1E40AF) : const Color(0xFF15803D),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
 
-                  // Amount & Running Balance Badge
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+              // Title (e.g. INV-LW-0002)
+              Text(
+                item.title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: Color(0xFF0F172A),
+                  letterSpacing: -0.2,
+                ),
+              ),
+
+              if (item.work?.trailaId != null && item.work!.trailaId!.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      const Icon(Icons.local_shipping_outlined, size: 11, color: Color(0xFF475569)),
+                      const SizedBox(width: 3),
                       Text(
-                        '${isWork ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(item.amount)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                          color: isWork ? const Color(0xFF0F172A) : const Color(0xFF16A34A),
-                          letterSpacing: -0.3,
+                        'Traila #${item.work!.trailaId}',
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF334155),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      _buildLabourBalanceBadge(item.runningBalance),
                     ],
+                  ),
+                ),
+              ],
+              const SizedBox(width: 14),
+
+              // Date & Time
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.access_time_rounded, size: 12, color: Colors.grey.shade400),
+                  const SizedBox(width: 4),
+                  Text(
+                    DateFormat('dd MMM yyyy, hh:mm a').format(item.date),
+                    style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
+              const SizedBox(width: 14),
 
-              const SizedBox(height: 14),
+              // Short Description / Subtitle
+              Expanded(
+                child: Text(
+                  isWork
+                      ? (item.work?.description.isNotEmpty == true ? item.work!.description : 'Labour Work')
+                      : 'Wage payment via ${item.payment?.method ?? "Cash"}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
 
-              // 2. Clear Body Breakdown
+              // Amount & Balance
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${isWork ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(item.amount)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                      color: isWork ? const Color(0xFF0F172A) : const Color(0xFF16A34A),
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  _buildLabourBalanceBadge(item.runningBalance),
+                ],
+              ),
+              const SizedBox(width: 12),
+
+              // Tap affordance: View detail pill + chevron
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(
-                  color: isWork ? const Color(0xFFF8FAFC) : const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(12),
+                  color: _isHovered ? const Color(0xFFEEF2FF) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: isWork ? const Color(0xFFEEF2F6) : const Color(0xFFDCFCE7),
+                    color: _isHovered ? const Color(0xFFC7D2FE) : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          isWork ? Icons.assignment_outlined : Icons.check_circle_outline_rounded,
-                          size: 16,
-                          color: isWork ? const Color(0xFF475569) : const Color(0xFF16A34A),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isWork
-                              ? (item.work?.description.isNotEmpty == true
-                                  ? item.work!.description
-                                  : 'Work completed for ${widget.labour.name}')
-                              : 'Wage payment disbursed via ${item.payment?.method ?? "Cash"}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isWork ? const Color(0xFF334155) : const Color(0xFF15803D),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (!isWork && item.payment?.receiptNumber?.isNotEmpty == true)
-                      Text(
-                        'Receipt: ${item.payment!.receiptNumber}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                    Text(
+                      'View',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: _isHovered ? const Color(0xFF4F46E5) : const Color(0xFF64748B),
                       ),
+                    ),
+                    const SizedBox(width: 3),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 10,
+                      color: _isHovered ? const Color(0xFF4F46E5) : const Color(0xFF94A3B8),
+                    ),
                   ],
                 ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // 3. Action Toolbar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final state = context.read<ERPCubit>().state;
-                      try {
-                        if (isWork && item.work != null) {
-                          await ThermalPrinterService.printLabourWork(
-                            context,
-                            labour: widget.labour,
-                            work: item.work!,
-                            profile: state.appProfile,
-                            settings: state.printerSetting,
-                            printDuplicate: true,
-                          );
-                        } else if (!isWork && item.payment != null) {
-                          await ThermalPrinterService.printLabourPayment(
-                            context,
-                            labour: widget.labour,
-                            payment: item.payment!,
-                            previousBalance: item.payment!.previousBalance ?? 0,
-                            newBalance: item.runningBalance,
-                            profile: state.appProfile,
-                            settings: state.printerSetting,
-                            printDuplicate: true,
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print error: $e')));
-                        }
-                      }
-                    },
-                    icon: const Icon(Icons.receipt_rounded, size: 15),
-                    label: const Text('Thermal Receipt (58/80mm)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0F172A),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final state = context.read<ERPCubit>().state;
-                      if (isWork && item.work != null) {
-                        final pdfBytes = await InvoicePdfService.generateLabourWorkPdf(
-                          labourName: widget.labour.name,
-                          date: DateFormat('dd-MM-yyyy').format(item.work!.date),
-                          trailaId: item.work!.trailaId,
-                          workPrice: item.work!.cost,
-                          previousBalance: item.work!.previousOutstanding,
-                          newBalance: item.runningBalance,
-                          profile: state.appProfile,
-                        );
-                        if (!context.mounted) return;
-                        await PrintPreviewDialog.show(
-                          context,
-                          pdfBytes,
-                          'Work_${item.work!.entryNumber}.pdf',
-                        );
-                      } else if (!isWork && item.payment != null) {
-                        final pdfBytes = await InvoicePdfService.generateLabourPaymentPdf(
-                          labourName: widget.labour.name,
-                          date: DateFormat('dd-MM-yyyy').format(item.payment!.date),
-                          paymentMethod: item.payment!.method,
-                          paidAmount: item.payment!.amount,
-                          previousBalance: item.payment!.previousBalance ?? 0,
-                          newBalance: item.runningBalance,
-                          profile: state.appProfile,
-                        );
-                        if (!context.mounted) return;
-                        await PrintPreviewDialog.show(
-                          context,
-                          pdfBytes,
-                          'Payment_${widget.labour.name}.pdf',
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 15, color: Color(0xFFEF4444)),
-                    label: const Text('PDF Invoice', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFDC2626),
-                      side: const BorderSide(color: Color(0xFFFCA5A5)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, size: 19, color: Color(0xFFEF4444)),
-                    tooltip: 'Delete entry',
-                    style: IconButton.styleFrom(
-                      hoverColor: const Color(0xFFFEE2E2),
-                    ),
-                    onPressed: () {
-                      if (isWork && item.work != null) {
-                        widget.onDeleteWork(item.work!.id);
-                      } else if (!isWork && item.payment != null) {
-                        widget.onDeletePayment(item.payment!.id);
-                      }
-                    },
-                  ),
-                ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LabourRecordDetailModal extends StatefulWidget {
+  final _LabourLedgerRow item;
+  final Labour labour;
+  final ValueChanged<String> onDeleteWork;
+  final ValueChanged<String> onDeletePayment;
+
+  const _LabourRecordDetailModal({
+    required this.item,
+    required this.labour,
+    required this.onDeleteWork,
+    required this.onDeletePayment,
+  });
+
+  @override
+  State<_LabourRecordDetailModal> createState() => _LabourRecordDetailModalState();
+}
+
+class _LabourRecordDetailModalState extends State<_LabourRecordDetailModal> {
+  bool _isExpanded = false;
+  bool _copied = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final isWork = item.isWork;
+    final accentColor = isWork ? const Color(0xFF2563EB) : const Color(0xFF16A34A);
+    final previousBalance = isWork
+        ? (item.work?.previousOutstanding ?? (item.runningBalance - item.amount))
+        : (item.payment?.previousBalance ?? (item.runningBalance + item.amount));
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOutCubic,
+        width: _isExpanded ? 900 : 640,
+        constraints: const BoxConstraints(maxHeight: 760),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 36,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. Executive Modal Titlebar with Minimize, Maximize, and Close Buttons
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  color: isWork ? const Color(0xFFF8FAFC) : const Color(0xFFF0FDF4),
+                  border: Border(
+                    bottom: BorderSide(color: isWork ? const Color(0xFFE2E8F0) : const Color(0xFFDCFCE7)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: isWork ? const Color(0xFFEFF6FF) : const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isWork ? const Color(0xFFBFDBFE) : const Color(0xFF86EFAC),
+                        ),
+                      ),
+                      child: Icon(
+                        isWork ? Icons.engineering_rounded : Icons.payments_rounded,
+                        color: accentColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                isWork ? 'Labour Work Invoice' : 'Wage Payment Voucher',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: accentColor.withValues(alpha: 0.25)),
+                                ),
+                                child: Text(
+                                  item.title,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: accentColor,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            DateFormat('EEEE, dd MMM yyyy • hh:mm a').format(item.date),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Dedicated Window Controls (Minimize, Maximize, Close)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Minimize / Dismiss Button
+                          Tooltip(
+                            message: 'Minimize / Dismiss',
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 30,
+                                height: 26,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.remove_rounded, size: 16, color: Color(0xFF64748B)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+
+                          // Maximize / Expand Toggle Button
+                          Tooltip(
+                            message: _isExpanded ? 'Restore View' : 'Maximize View',
+                            child: InkWell(
+                              onTap: () => setState(() => _isExpanded = !_isExpanded),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 30,
+                                height: 26,
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  _isExpanded ? Icons.filter_none_rounded : Icons.crop_square_rounded,
+                                  size: _isExpanded ? 13 : 15,
+                                  color: const Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+
+                          // Close Cross Button
+                          Tooltip(
+                            message: 'Close',
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 30,
+                                height: 26,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF64748B)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 2. Scrollable Modal Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Hero Financial Card with Ledger Impact Flow
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isWork
+                                ? [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)]
+                                : [const Color(0xFFF0FDF4), const Color(0xFFDCFCE7)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isWork ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isWork ? 'AMOUNT ADDED TO WAGES' : 'WAGE PAYMENT DISBURSED',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.8,
+                                        color: accentColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${isWork ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(item.amount)}',
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -0.6,
+                                        color: isWork ? const Color(0xFF0F172A) : const Color(0xFF15803D),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                _buildLabourBalanceBadge(item.runningBalance),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            const Divider(height: 1, color: Color(0x33000000)),
+                            const SizedBox(height: 12),
+                            // 3-Stage Balance Audit Flow
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Previous Due', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Rs. ${NumberFormat("#,##0").format(previousBalance)}',
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                                    ),
+                                  ],
+                                ),
+                                Icon(Icons.arrow_forward_rounded, size: 16, color: accentColor),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(isWork ? 'Work Cost' : 'Amount Paid', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${isWork ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(item.amount)}',
+                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: accentColor),
+                                    ),
+                                  ],
+                                ),
+                                Icon(Icons.arrow_forward_rounded, size: 16, color: accentColor),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Text('Updated Balance', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Rs. ${NumberFormat("#,##0").format(item.runningBalance)}',
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Key Parameters Matrix
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildDetailCard(
+                              icon: Icons.person_outline_rounded,
+                              label: 'Craftsman / Worker',
+                              value: widget.labour.name,
+                              subValue: 'ID: ${widget.labour.id}',
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: _buildDetailCard(
+                              icon: Icons.local_shipping_outlined,
+                              label: 'Traila Unit Build',
+                              value: (item.work?.trailaId != null && item.work!.trailaId!.isNotEmpty)
+                                  ? 'Traila #${item.work!.trailaId}'
+                                  : 'General Workshop Unit',
+                              subValue: isWork ? 'Manufacturing Work' : (item.payment?.method ?? 'Cash'),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+
+                      if (!isWork && item.payment?.receiptNumber?.isNotEmpty == true) ...[
+                        _buildDetailCard(
+                          icon: Icons.tag_rounded,
+                          label: 'Receipt / Reference Code',
+                          value: item.payment!.receiptNumber!,
+                          subValue: 'Disbursed via ${item.payment!.method}',
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+
+                      // Full Scope of Work / Notes Section
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      isWork ? Icons.description_outlined : Icons.notes_rounded,
+                                      size: 16,
+                                      color: const Color(0xFF475569),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      isWork ? 'SCOPE OF WORK & DESCRIPTION' : 'PAYMENT REMARKS & NOTES',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.6,
+                                        color: Color(0xFF475569),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                InkWell(
+                                  onTap: () {
+                                    final text = isWork
+                                        ? (item.work?.description ?? '')
+                                        : 'Wage payment of Rs. ${NumberFormat("#,##0").format(item.amount)} disbursed to ${widget.labour.name} via ${item.payment?.method ?? "Cash"}${item.payment?.receiptNumber != null ? " (Receipt #${item.payment!.receiptNumber})" : ""}';
+                                    Clipboard.setData(ClipboardData(text: text));
+                                    setState(() => _copied = true);
+                                    Future.delayed(const Duration(seconds: 2), () {
+                                      if (mounted) setState(() => _copied = false);
+                                    });
+                                  },
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          _copied ? Icons.check_rounded : Icons.copy_rounded,
+                                          size: 13,
+                                          color: _copied ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _copied ? 'Copied' : 'Copy',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: _copied ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              isWork
+                                  ? (item.work?.description.isNotEmpty == true
+                                      ? item.work!.description
+                                      : 'No additional notes provided for this work log entry.')
+                                  : 'Wage payment of Rs. ${NumberFormat("#,##0").format(item.amount)} disbursed to ${widget.labour.name} via ${item.payment?.method ?? "Cash"}${item.payment?.receiptNumber != null ? " (Receipt #${item.payment!.receiptNumber})" : ""}.',
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                height: 1.5,
+                                color: Color(0xFF1E293B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 3. Bottom Action Footer Bar
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8FAFC),
+                  border: Border(
+                    top: BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    // Delete Entry Button (with confirmation)
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        if (isWork && item.work != null) {
+                          widget.onDeleteWork(item.work!.id);
+                        } else if (!isWork && item.payment != null) {
+                          widget.onDeletePayment(item.payment!.id);
+                        }
+                      },
+                      icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                      label: const Text('Delete Entry', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w700, fontSize: 12.5)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFFECACA)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    const Spacer(),
+
+                    // Thermal Receipt (58/80mm) Button
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final state = context.read<ERPCubit>().state;
+                        try {
+                          if (isWork && item.work != null) {
+                            await ThermalPrinterService.printLabourWork(
+                              context,
+                              labour: widget.labour,
+                              work: item.work!,
+                              profile: state.appProfile,
+                              settings: state.printerSetting,
+                              printDuplicate: true,
+                            );
+                          } else if (!isWork && item.payment != null) {
+                            await ThermalPrinterService.printLabourPayment(
+                              context,
+                              labour: widget.labour,
+                              payment: item.payment!,
+                              previousBalance: item.payment!.previousBalance ?? 0,
+                              newBalance: item.runningBalance,
+                              profile: state.appProfile,
+                              settings: state.printerSetting,
+                              printDuplicate: true,
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print error: $e')));
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.receipt_rounded, size: 16),
+                      label: const Text('Thermal Receipt (58/80mm)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF0F172A),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // PDF Invoice Button
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final state = context.read<ERPCubit>().state;
+                        if (isWork && item.work != null) {
+                          final pdfBytes = await InvoicePdfService.generateLabourWorkPdf(
+                            labourName: widget.labour.name,
+                            date: DateFormat('dd-MM-yyyy').format(item.work!.date),
+                            trailaId: item.work!.trailaId,
+                            workPrice: item.work!.cost,
+                            previousBalance: item.work!.previousOutstanding,
+                            newBalance: item.runningBalance,
+                            profile: state.appProfile,
+                          );
+                          if (!context.mounted) return;
+                          await PrintPreviewDialog.show(
+                            context,
+                            pdfBytes,
+                            'Work_${item.work!.entryNumber}.pdf',
+                          );
+                        } else if (!isWork && item.payment != null) {
+                          final pdfBytes = await InvoicePdfService.generateLabourPaymentPdf(
+                            labourName: widget.labour.name,
+                            date: DateFormat('dd-MM-yyyy').format(item.payment!.date),
+                            paymentMethod: item.payment!.method,
+                            paidAmount: item.payment!.amount,
+                            previousBalance: item.payment!.previousBalance ?? 0,
+                            newBalance: item.runningBalance,
+                            profile: state.appProfile,
+                          );
+                          if (!context.mounted) return;
+                          await PrintPreviewDialog.show(
+                            context,
+                            pdfBytes,
+                            'Payment_${widget.labour.name}.pdf',
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                      label: const Text('PDF Invoice', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF4444),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Close Button
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF64748B),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      ),
+                      child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required String subValue,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Icon(icon, size: 17, color: const Color(0xFF475569)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+                const SizedBox(height: 1),
+                Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(subValue, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

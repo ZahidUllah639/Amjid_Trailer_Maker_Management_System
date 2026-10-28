@@ -648,107 +648,146 @@ class _ExpenseItemRow extends StatelessWidget {
     }
   }
 
+  void _showExpenseDetailModal(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (context) => _ExpenseDetailModal(
+        expense: expense,
+        trailaId: trailaId,
+        onEdit: () {
+          Navigator.pop(context);
+          _showEditExpenseDialog(context);
+        },
+        onDelete: () {
+          Navigator.pop(context);
+          _showDeleteDialog(context);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = _getColor();
     final currencyFormat = NumberFormat('#,##0');
     final dateFormat = DateFormat('dd MMM yyyy');
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: () => _showExpenseDetailModal(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(_getIcon(), color: color, size: 20),
             ),
-            child: Icon(_getIcon(), color: color, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  expense.description,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                    color: Color(0xFF0F172A),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    expense.description,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        expense.type.toUpperCase(),
-                        style: TextStyle(
-                          color: color,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          expense.type.toUpperCase(),
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      dateFormat.format(expense.date),
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Text(
+                        dateFormat.format(expense.date),
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              'Rs. ${currencyFormat.format(expense.amount)}',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFEF4444),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('View', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+                  SizedBox(width: 3),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF94A3B8)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              onSelected: (val) {
+                if (val == 'edit') {
+                  _showEditExpenseDialog(context);
+                } else if (val == 'delete') {
+                  _showDeleteDialog(context);
+                }
+              },
+              icon: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF64748B)),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_rounded, size: 16, color: Color(0xFF4F46E5)),
+                      SizedBox(width: 8),
+                      Text('Edit Item'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                      SizedBox(width: 8),
+                      Text('Delete Item'),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-          Text(
-            'Rs. ${currencyFormat.format(expense.amount)}',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFFEF4444),
-            ),
-          ),
-          const SizedBox(width: 12),
-          PopupMenuButton<String>(
-            onSelected: (val) {
-              if (val == 'edit') {
-                _showEditExpenseDialog(context);
-              } else if (val == 'delete') {
-                _showDeleteDialog(context);
-              }
-            },
-            icon: const Icon(Icons.more_vert_rounded, size: 18, color: Color(0xFF64748B)),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit_rounded, size: 16, color: Color(0xFF4F46E5)),
-                    SizedBox(width: 8),
-                    Text('Edit Item'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
-                    SizedBox(width: 8),
-                    Text('Delete Item'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -900,3 +939,460 @@ class _ExpenseItemRow extends StatelessWidget {
     );
   }
 }
+
+class _ExpenseDetailModal extends StatefulWidget {
+  final TrailaExpense expense;
+  final String trailaId;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _ExpenseDetailModal({
+    required this.expense,
+    required this.trailaId,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_ExpenseDetailModal> createState() => _ExpenseDetailModalState();
+}
+
+class _ExpenseDetailModalState extends State<_ExpenseDetailModal> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final expense = widget.expense;
+    final currencyFormat = NumberFormat('#,##0');
+    final dateFormat = DateFormat('EEEE, dd MMMM yyyy');
+
+    Color color;
+    switch (expense.type.toLowerCase()) {
+      case 'material':
+        color = const Color(0xFFF59E0B);
+        break;
+      case 'labour':
+        color = const Color(0xFF14B8A6);
+        break;
+      default:
+        color = const Color(0xFF818CF8);
+    }
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOutCubic,
+        width: _isExpanded ? 880 : 580,
+        constraints: const BoxConstraints(maxHeight: 720),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.14),
+              blurRadius: 36,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. Executive Modal Titlebar with Window Controls
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.08),
+                  border: Border(bottom: BorderSide(color: color.withValues(alpha: 0.2))),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: color.withValues(alpha: 0.3)),
+                      ),
+                      child: Icon(
+                        expense.type.toLowerCase() == 'material'
+                            ? Icons.inventory_2_rounded
+                            : (expense.type.toLowerCase() == 'labour'
+                                ? Icons.engineering_rounded
+                                : Icons.add_circle_outline_rounded),
+                        color: color,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                '${expense.type.toUpperCase()} Expense Record',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F172A),
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEEF2FF),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFFC7D2FE)),
+                                ),
+                                child: Text(
+                                  'Traila #${widget.trailaId}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF4338CA),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            dateFormat.format(expense.date),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Dedicated Window Controls (Minimize, Maximize, Close)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Tooltip(
+                            message: 'Minimize / Dismiss',
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 30,
+                                height: 26,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.remove_rounded, size: 16, color: Color(0xFF64748B)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Tooltip(
+                            message: _isExpanded ? 'Restore View' : 'Maximize View',
+                            child: InkWell(
+                              onTap: () => setState(() => _isExpanded = !_isExpanded),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 30,
+                                height: 26,
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  _isExpanded ? Icons.filter_none_rounded : Icons.crop_square_rounded,
+                                  size: _isExpanded ? 13 : 15,
+                                  color: const Color(0xFF64748B),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Tooltip(
+                            message: 'Close',
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                width: 30,
+                                height: 26,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF64748B)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 2. Body
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Amount Header Card
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFFFEE2E2)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'RECORDED EXPENSE AMOUNT',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.6,
+                                    color: Color(0xFF991B1B),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Rs. ${currencyFormat.format(expense.amount)}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFFDC2626),
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFFECACA)),
+                              ),
+                              child: Text(
+                                expense.type.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: color,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Specifications
+                      const Text(
+                        'EXPENSE SPECIFICATIONS',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDetailCell(
+                                    icon: Icons.local_shipping_outlined,
+                                    label: 'Traila Unit',
+                                    value: 'Traila #${widget.trailaId}',
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: _buildDetailCell(
+                                    icon: Icons.category_outlined,
+                                    label: 'Cost Category',
+                                    value: expense.type.toUpperCase(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 20, color: Color(0xFFF1F5F9)),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDetailCell(
+                                    icon: Icons.calendar_today_rounded,
+                                    label: 'Date Incurred',
+                                    value: dateFormat.format(expense.date),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: _buildDetailCell(
+                                    icon: Icons.link_rounded,
+                                    label: 'Ledger Link',
+                                    value: (expense.supplierId != null || expense.labourId != null)
+                                        ? 'Linked to Party Ledger'
+                                        : 'Direct Traila Cost',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Description
+                      const Text(
+                        'DESCRIPTION & REMARKS',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.8,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          expense.description.isNotEmpty ? expense.description : 'No remarks specified.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF334155),
+                            height: 1.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 3. Action Footer
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8FAFC),
+                  border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: widget.onDelete,
+                      icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+                      label: const Text('Delete Entry', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w700)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFFECACA)),
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    OutlinedButton.icon(
+                      onPressed: widget.onEdit,
+                      icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF475569)),
+                      label: const Text('Edit Entry', style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w700)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    const Spacer(),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailCell({required IconData icon, required String label, required String value}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Icon(icon, size: 16, color: const Color(0xFF475569)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
