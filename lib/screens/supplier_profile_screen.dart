@@ -950,264 +950,11 @@ class _UnifiedSupplierLedgerState extends State<_UnifiedSupplierLedger> {
   }
 
   Widget _buildUnifiedCard(BuildContext context, _LedgerRowData item) {
-    final isPurchase = item.type == _LedgerType.purchase;
-    final cardColor = isPurchase ? const Color(0xFFF8FAFC) : const Color(0xFFF0FDF4);
-    final borderColor = isPurchase ? const Color(0xFFE2E8F0) : const Color(0xFFDCFCE7);
-    final typeBadgeColor = isPurchase ? const Color(0xFF1E40AF) : const Color(0xFF15803D);
-    final typeBadgeBg = isPurchase ? const Color(0xFFDBEAFE) : const Color(0xFFDCFCE7);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: const Border(),
-        collapsedShape: const Border(),
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: typeBadgeBg,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            isPurchase ? Icons.receipt_long_rounded : Icons.payments_rounded,
-            color: typeBadgeColor,
-            size: 22,
-          ),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: typeBadgeBg,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                isPurchase ? 'PURCHASE' : 'PAYMENT',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                  color: typeBadgeColor,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              item.refTitle,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-            const Spacer(),
-            Text(
-              '${isPurchase ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(item.amount)}',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-                color: isPurchase ? const Color(0xFF1E293B) : const Color(0xFF16A34A),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Row(
-            children: [
-              Text(
-                DateFormat('dd MMM yyyy, hh:mm a').format(item.date),
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '• ${item.subtitle}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-              ),
-              const Spacer(),
-              _buildBalanceBadge(item.runningBalance, fontSize: 11),
-            ],
-          ),
-        ),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardColor,
-              border: Border(top: BorderSide(color: borderColor)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isPurchase && item.purchase != null) ...[
-                  const Text('Purchased Items:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  ...item.purchase!.items.map((it) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text('• ${it.name}', style: const TextStyle(fontSize: 13))),
-                        Text('${it.quantity} x Rs. ${NumberFormat("#,##0").format(it.unitPrice)} = ', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
-                        Text('Rs. ${NumberFormat("#,##0").format(it.total)}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  )),
-                  const SizedBox(height: 12),
-                  if (item.purchase!.paymentAmount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check_circle, size: 14, color: Color(0xFF16A34A)),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Paid at time of purchase: Rs. ${NumberFormat("#,##0").format(item.purchase!.paymentAmount)} via ${item.purchase!.paymentMethod ?? "Cash"}',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                ] else if (!isPurchase && item.payment != null) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Previous Balance: Rs. ${NumberFormat("#,##0").format(item.previousBalance)}', style: TextStyle(fontSize: 13, color: Colors.grey.shade700)),
-                      Text('Paid: Rs. ${NumberFormat("#,##0").format(item.amount)}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF16A34A))),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Resulting Balance:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                      _buildBalanceBadge(item.runningBalance, fontSize: 12),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 14),
-                // Action row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // Thermal print button (with 58mm/80mm roll switcher)
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final state = context.read<ERPCubit>().state;
-                        try {
-                          if (isPurchase && item.purchase != null) {
-                            await ThermalPrinterService.printSupplierPurchase(
-                              context,
-                              supplier: widget.supplier,
-                              purchase: item.purchase!,
-                              profile: state.appProfile,
-                              settings: state.printerSetting,
-                              printDuplicate: true,
-                            );
-                          } else if (!isPurchase && item.payment != null) {
-                            await ThermalPrinterService.printSupplierPayment(
-                              context,
-                              supplier: widget.supplier,
-                              payment: item.payment!,
-                              previousBalance: item.previousBalance,
-                              newBalance: item.runningBalance,
-                              profile: state.appProfile,
-                              settings: state.printerSetting,
-                              printDuplicate: true,
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print error: $e')));
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.receipt_rounded, size: 16),
-                      label: const Text('Thermal Receipt (58/80mm)'),
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        foregroundColor: const Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Standard PDF button
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        final state = context.read<ERPCubit>().state;
-                        if (isPurchase && item.purchase != null) {
-                          final pdfBytes = await InvoicePdfService.generateSupplierPurchasePdf(
-                            supplierName: widget.supplier.name,
-                            date: DateFormat('dd-MM-yyyy').format(item.purchase!.date),
-                            items: item.purchase!.items,
-                            previousBalance: item.purchase!.previousOutstanding,
-                            paymentAmount: item.purchase!.paymentAmount,
-                            newBalance: item.purchase!.updatedBalance,
-                            paymentMethod: item.purchase!.paymentMethod,
-                            profile: state.appProfile,
-                          );
-                          if (!context.mounted) return;
-                          await PrintPreviewDialog.show(
-                            context,
-                            pdfBytes,
-                            'Purchase_Invoice_${item.purchase!.billNumber}.pdf',
-                          );
-                        } else if (!isPurchase && item.payment != null) {
-                          final pdfBytes = await InvoicePdfService.generateSupplierPaymentPdf(
-                            supplierName: widget.supplier.name,
-                            date: DateFormat('dd-MM-yyyy').format(item.payment!.date),
-                            paymentMethod: item.payment!.method,
-                            paidAmount: item.payment!.amount,
-                            previousBalance: item.previousBalance,
-                            newBalance: item.runningBalance,
-                            profile: state.appProfile,
-                          );
-                          if (!context.mounted) return;
-                          await PrintPreviewDialog.show(
-                            context,
-                            pdfBytes,
-                            'Payment_${widget.supplier.name}.pdf',
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.picture_as_pdf, size: 16, color: Colors.red),
-                      label: const Text('PDF'),
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        foregroundColor: Colors.red.shade700,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Delete button
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                      tooltip: 'Delete transaction',
-                      onPressed: () {
-                        if (isPurchase && item.purchase != null) {
-                          _showDeletePurchaseDialog(context, item.purchase!.id);
-                        } else if (!isPurchase && item.payment != null) {
-                          _showDeletePaymentDialog(context, item.payment!.id);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return _ModernSupplierLedgerCard(
+      item: item,
+      supplier: widget.supplier,
+      onDeletePurchase: (id) => _showDeletePurchaseDialog(context, id),
+      onDeletePayment: (id) => _showDeletePaymentDialog(context, id),
     );
   }
 
@@ -1251,6 +998,473 @@ class _UnifiedSupplierLedgerState extends State<_UnifiedSupplierLedger> {
             child: const Text('Delete'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ModernSupplierLedgerCard extends StatefulWidget {
+  final _LedgerRowData item;
+  final Supplier supplier;
+  final ValueChanged<String> onDeletePurchase;
+  final ValueChanged<String> onDeletePayment;
+
+  const _ModernSupplierLedgerCard({
+    required this.item,
+    required this.supplier,
+    required this.onDeletePurchase,
+    required this.onDeletePayment,
+  });
+
+  @override
+  State<_ModernSupplierLedgerCard> createState() => _ModernSupplierLedgerCardState();
+}
+
+class _ModernSupplierLedgerCardState extends State<_ModernSupplierLedgerCard> {
+  bool _isHovered = false;
+  bool _showAllItems = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final isPurchase = item.type == _LedgerType.purchase;
+    final accentColor = isPurchase ? const Color(0xFF2563EB) : const Color(0xFF10B981);
+    final borderColor = _isHovered
+        ? accentColor.withValues(alpha: 0.45)
+        : (isPurchase ? const Color(0xFFE2E8F0) : const Color(0xFFDCFCE7));
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0.0, _isHovered ? -2.0 : 0.0, 0.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: _isHovered ? 1.5 : 1.0),
+          boxShadow: [
+            BoxShadow(
+              color: _isHovered
+                  ? accentColor.withValues(alpha: 0.12)
+                  : Colors.black.withValues(alpha: 0.025),
+              blurRadius: _isHovered ? 14 : 6,
+              offset: Offset(0, _isHovered ? 4 : 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Top Identity & Balance Row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Icon Capsule
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isPurchase
+                            ? [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)]
+                            : [const Color(0xFFF0FDF4), const Color(0xFFDCFCE7)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isPurchase ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
+                      ),
+                    ),
+                    child: Icon(
+                      isPurchase ? Icons.receipt_long_rounded : Icons.verified_rounded,
+                      color: isPurchase ? const Color(0xFF1D4ED8) : const Color(0xFF15803D),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+
+                  // Header Titles & Reference
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: isPurchase ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: isPurchase ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
+                                ),
+                              ),
+                              child: Text(
+                                isPurchase ? 'PURCHASE INVOICE' : 'SETTLEMENT PAYMENT',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                  color: isPurchase ? const Color(0xFF1E40AF) : const Color(0xFF15803D),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              item.refTitle,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            if (item.purchase?.trailaId != null && item.purchase!.trailaId!.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.local_shipping_outlined, size: 12, color: Color(0xFF475569)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Traila #${item.purchase!.trailaId}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time_rounded, size: 13, color: Colors.grey.shade500),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat('dd MMM yyyy, hh:mm a').format(item.date),
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              '• ${item.subtitle}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Amount & Running Balance Badge
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${isPurchase ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(item.amount)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          color: isPurchase ? const Color(0xFF0F172A) : const Color(0xFF16A34A),
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      _buildBalanceBadge(item.runningBalance, fontSize: 11),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
+
+              // 2. Clear Itemized Breakdown or Settlement Timeline (No Ugly Dropdown!)
+              if (isPurchase && item.purchase != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFEEF2F6)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'PURCHASED LINE ITEMS',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF64748B),
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                          Text(
+                            '${item.purchase!.items.length} item(s)',
+                            style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Display items as sleek chips / rows
+                      ...() {
+                        final itemsToShow = _showAllItems || item.purchase!.items.length <= 4
+                            ? item.purchase!.items
+                            : item.purchase!.items.take(3).toList();
+                        return itemsToShow.map((it) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF3B82F6),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  it.name,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                ),
+                              ),
+                              Text(
+                                '${it.quantity} pcs  ×  Rs. ${NumberFormat("#,##0").format(it.unitPrice)}  ➔  ',
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              ),
+                              Text(
+                                'Rs. ${NumberFormat("#,##0").format(it.total)}',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                              ),
+                            ],
+                          ),
+                        ));
+                      }(),
+                      if (item.purchase!.items.length > 4) ...[
+                        const SizedBox(height: 4),
+                        InkWell(
+                          onTap: () => setState(() => _showAllItems = !_showAllItems),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Text(
+                              _showAllItems
+                                  ? 'Show less'
+                                  : '+ ${item.purchase!.items.length - 3} more items...',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF2563EB),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (item.purchase!.paymentAmount > 0) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFBBF7D0)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle_rounded, size: 15, color: Color(0xFF16A34A)),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Settled at time of purchase: Rs. ${NumberFormat("#,##0").format(item.purchase!.paymentAmount)} via ${item.purchase!.paymentMethod ?? "Cash"}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF15803D),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ] else if (!isPurchase && item.payment != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFDCFCE7)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.history_rounded, size: 16, color: Color(0xFF16A34A)),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Previous Balance: Rs. ${NumberFormat("#,##0").format(item.previousBalance)}',
+                            style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.arrow_forward_rounded, size: 14, color: Color(0xFF16A34A)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Paid: Rs. ${NumberFormat("#,##0").format(item.amount)}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF15803D),
+                            ),
+                          ),
+                        ],
+                      ),
+                      _buildBalanceBadge(item.runningBalance, fontSize: 12),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 12),
+
+              // 3. World-Class Action Toolbar
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final state = context.read<ERPCubit>().state;
+                      try {
+                        if (isPurchase && item.purchase != null) {
+                          await ThermalPrinterService.printSupplierPurchase(
+                            context,
+                            supplier: widget.supplier,
+                            purchase: item.purchase!,
+                            profile: state.appProfile,
+                            settings: state.printerSetting,
+                            printDuplicate: true,
+                          );
+                        } else if (!isPurchase && item.payment != null) {
+                          await ThermalPrinterService.printSupplierPayment(
+                            context,
+                            supplier: widget.supplier,
+                            payment: item.payment!,
+                            previousBalance: item.previousBalance,
+                            newBalance: item.runningBalance,
+                            profile: state.appProfile,
+                            settings: state.printerSetting,
+                            printDuplicate: true,
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print error: $e')));
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.receipt_rounded, size: 15),
+                    label: const Text('Thermal Receipt (58/80mm)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF0F172A),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final state = context.read<ERPCubit>().state;
+                      if (isPurchase && item.purchase != null) {
+                        final pdfBytes = await InvoicePdfService.generateSupplierPurchasePdf(
+                          supplierName: widget.supplier.name,
+                          date: DateFormat('dd-MM-yyyy').format(item.purchase!.date),
+                          items: item.purchase!.items,
+                          previousBalance: item.purchase!.previousOutstanding,
+                          paymentAmount: item.purchase!.paymentAmount,
+                          newBalance: item.purchase!.updatedBalance,
+                          paymentMethod: item.purchase!.paymentMethod,
+                          profile: state.appProfile,
+                        );
+                        if (!context.mounted) return;
+                        await PrintPreviewDialog.show(
+                          context,
+                          pdfBytes,
+                          'Purchase_Invoice_${item.purchase!.billNumber}.pdf',
+                        );
+                      } else if (!isPurchase && item.payment != null) {
+                        final pdfBytes = await InvoicePdfService.generateSupplierPaymentPdf(
+                          supplierName: widget.supplier.name,
+                          date: DateFormat('dd-MM-yyyy').format(item.payment!.date),
+                          paymentMethod: item.payment!.method,
+                          paidAmount: item.payment!.amount,
+                          previousBalance: item.previousBalance,
+                          newBalance: item.runningBalance,
+                          profile: state.appProfile,
+                        );
+                        if (!context.mounted) return;
+                        await PrintPreviewDialog.show(
+                          context,
+                          pdfBytes,
+                          'Payment_${widget.supplier.name}.pdf',
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 15, color: Color(0xFFEF4444)),
+                    label: const Text('PDF Invoice', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      side: const BorderSide(color: Color(0xFFFCA5A5)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, size: 19, color: Color(0xFFEF4444)),
+                    tooltip: 'Delete entry',
+                    style: IconButton.styleFrom(
+                      hoverColor: const Color(0xFFFEE2E2),
+                    ),
+                    onPressed: () {
+                      if (isPurchase && item.purchase != null) {
+                        widget.onDeletePurchase(item.purchase!.id);
+                      } else if (!isPurchase && item.payment != null) {
+                        widget.onDeletePayment(item.payment!.id);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

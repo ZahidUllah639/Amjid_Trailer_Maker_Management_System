@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'sidebar.dart';
 import 'header.dart';
+import 'cinematic_intro_overlay.dart';
 import '../cubits/erp_cubit.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/traila_register_screen.dart';
@@ -23,6 +24,7 @@ class Layout extends StatefulWidget {
 
 class _LayoutState extends State<Layout> {
   bool isSidebarCollapsed = false;
+  bool _showIntro = true;
   late PageController _pageController;
 
   final List<Widget> _screens = [
@@ -69,35 +71,45 @@ class _LayoutState extends State<Layout> {
       child: BlocBuilder<ERPCubit, ERPState>(
         buildWhen: (prev, curr) => prev.currentModuleIndex != curr.currentModuleIndex,
         builder: (context, state) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF8FAFC),
-            body: Row(
-              children: [
-                Sidebar(
-                  isCollapsed: isSidebarCollapsed,
-                  onToggle: () => setState(() => isSidebarCollapsed = !isSidebarCollapsed),
-                  selectedIndex: state.currentModuleIndex,
-                  onIndexChanged: _onIndexChanged,
-                ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      const Header(),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: PageView(
-                            controller: _pageController,
-                            physics: const NeverScrollableScrollPhysics(),
-                            children: _screens,
+          return Stack(
+            children: [
+              Scaffold(
+                backgroundColor: const Color(0xFFF8FAFC),
+                body: Row(
+                  children: [
+                    Sidebar(
+                      isCollapsed: isSidebarCollapsed,
+                      onToggle: () => setState(() => isSidebarCollapsed = !isSidebarCollapsed),
+                      selectedIndex: state.currentModuleIndex,
+                      onIndexChanged: _onIndexChanged,
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          const Header(),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: PageView(
+                                controller: _pageController,
+                                physics: const NeverScrollableScrollPhysics(),
+                                children: _screens,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              if (_showIntro)
+                CinematicIntroOverlay(
+                  onFinished: () {
+                    if (mounted) setState(() => _showIntro = false);
+                  },
+                ),
+            ],
           );
         },
       ),

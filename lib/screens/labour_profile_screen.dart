@@ -844,199 +844,11 @@ class _UnifiedLabourLedgerState extends State<_UnifiedLabourLedger> {
   }
 
   Widget _buildLedgerCard(BuildContext context, _LabourLedgerRow item) {
-    final bgBadge = item.isWork ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4);
-    final borderBadge = item.isWork ? const Color(0xFFBFDBFE) : const Color(0xFFDCFCE7);
-    final textColor = item.isWork ? const Color(0xFF1D4ED8) : const Color(0xFF16A34A);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.015),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: const Border(),
-        collapsedShape: const Border(),
-        leading: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: bgBadge,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: borderBadge),
-          ),
-          child: Icon(
-            item.isWork ? Icons.engineering_rounded : Icons.payments_rounded,
-            color: textColor,
-            size: 20,
-          ),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: bgBadge,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                item.isWork ? 'WORK ENTRY' : 'WAGE PAYMENT',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                  color: textColor,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            const Spacer(),
-            Text(
-              '${item.isWork ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(item.amount)}',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-                color: item.isWork ? const Color(0xFF1E293B) : const Color(0xFF16A34A),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Row(
-            children: [
-              Text(
-                DateFormat('dd MMM yyyy, hh:mm a').format(item.date),
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-              const SizedBox(width: 10),
-              Text('• ${item.subtitle}', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-              const Spacer(),
-              _buildLabourBalanceBadge(item.runningBalance),
-            ],
-          ),
-        ),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: item.isWork ? const Color(0xFFF8FAFC) : const Color(0xFFF0FDF4),
-              border: const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // Thermal print button (with 58mm/80mm roll switcher!)
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final state = context.read<ERPCubit>().state;
-                    try {
-                      if (item.isWork && item.work != null) {
-                        await ThermalPrinterService.printLabourWork(
-                          context,
-                          labour: widget.labour,
-                          work: item.work!,
-                          profile: state.appProfile,
-                          settings: state.printerSetting,
-                          printDuplicate: true,
-                        );
-                      } else if (!item.isWork && item.payment != null) {
-                        await ThermalPrinterService.printLabourPayment(
-                          context,
-                          labour: widget.labour,
-                          payment: item.payment!,
-                          previousBalance: item.payment!.previousBalance ?? 0,
-                          newBalance: item.runningBalance,
-                          profile: state.appProfile,
-                          settings: state.printerSetting,
-                          printDuplicate: true,
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print error: $e')));
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.receipt_rounded, size: 16),
-                  label: const Text('Thermal Receipt (58/80mm)'),
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: const Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // PDF button
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final state = context.read<ERPCubit>().state;
-                    if (item.isWork && item.work != null) {
-                      final pdfBytes = await InvoicePdfService.generateLabourWorkPdf(
-                        labourName: widget.labour.name,
-                        date: DateFormat('dd-MM-yyyy').format(item.work!.date),
-                        trailaId: item.work!.trailaId,
-                        workPrice: item.work!.cost,
-                        previousBalance: item.work!.previousOutstanding,
-                        newBalance: item.runningBalance,
-                        profile: state.appProfile,
-                      );
-                      if (!context.mounted) return;
-                      await PrintPreviewDialog.show(
-                        context,
-                        pdfBytes,
-                        'Work_${item.work!.entryNumber}.pdf',
-                      );
-                    } else if (!item.isWork && item.payment != null) {
-                      final pdfBytes = await InvoicePdfService.generateLabourPaymentPdf(
-                        labourName: widget.labour.name,
-                        date: DateFormat('dd-MM-yyyy').format(item.payment!.date),
-                        paymentMethod: item.payment!.method,
-                        paidAmount: item.payment!.amount,
-                        previousBalance: item.payment!.previousBalance ?? 0,
-                        newBalance: item.runningBalance,
-                        profile: state.appProfile,
-                      );
-                      if (!context.mounted) return;
-                      await PrintPreviewDialog.show(
-                        context,
-                        pdfBytes,
-                        'Payment_${widget.labour.name}.pdf',
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.picture_as_pdf, size: 16, color: Colors.red),
-                  label: const Text('PDF'),
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: Colors.red.shade700,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                  tooltip: 'Delete transaction',
-                  onPressed: () {
-                    if (item.isWork && item.work != null) {
-                      _showDeleteWorkDialog(context, item.work!.id);
-                    } else if (!item.isWork && item.payment != null) {
-                      _showDeletePaymentDialog(context, item.payment!.id);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return _ModernLabourLedgerCard(
+      item: item,
+      labour: widget.labour,
+      onDeleteWork: (id) => _showDeleteWorkDialog(context, id),
+      onDeletePayment: (id) => _showDeletePaymentDialog(context, id),
     );
   }
 
@@ -1080,6 +892,358 @@ class _UnifiedLabourLedgerState extends State<_UnifiedLabourLedger> {
             child: const Text('Delete'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ModernLabourLedgerCard extends StatefulWidget {
+  final _LabourLedgerRow item;
+  final Labour labour;
+  final ValueChanged<String> onDeleteWork;
+  final ValueChanged<String> onDeletePayment;
+
+  const _ModernLabourLedgerCard({
+    required this.item,
+    required this.labour,
+    required this.onDeleteWork,
+    required this.onDeletePayment,
+  });
+
+  @override
+  State<_ModernLabourLedgerCard> createState() => _ModernLabourLedgerCardState();
+}
+
+class _ModernLabourLedgerCardState extends State<_ModernLabourLedgerCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final isWork = item.isWork;
+    final accentColor = isWork ? const Color(0xFF2563EB) : const Color(0xFF10B981);
+    final borderColor = _isHovered
+        ? accentColor.withValues(alpha: 0.45)
+        : (isWork ? const Color(0xFFE2E8F0) : const Color(0xFFDCFCE7));
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0.0, _isHovered ? -2.0 : 0.0, 0.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: _isHovered ? 1.5 : 1.0),
+          boxShadow: [
+            BoxShadow(
+              color: _isHovered
+                  ? accentColor.withValues(alpha: 0.12)
+                  : Colors.black.withValues(alpha: 0.025),
+              blurRadius: _isHovered ? 14 : 6,
+              offset: Offset(0, _isHovered ? 4 : 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Top Identity Row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isWork
+                            ? [const Color(0xFFEFF6FF), const Color(0xFFDBEAFE)]
+                            : [const Color(0xFFF0FDF4), const Color(0xFFDCFCE7)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isWork ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
+                      ),
+                    ),
+                    child: Icon(
+                      isWork ? Icons.engineering_rounded : Icons.payments_rounded,
+                      color: isWork ? const Color(0xFF1D4ED8) : const Color(0xFF15803D),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+
+                  // Header Titles & Reference
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: isWork ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: isWork ? const Color(0xFFBFDBFE) : const Color(0xFFBBF7D0),
+                                ),
+                              ),
+                              child: Text(
+                                isWork ? 'WORK LOG ENTRY' : 'WAGE PAYMENT',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                  color: isWork ? const Color(0xFF1E40AF) : const Color(0xFF15803D),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              item.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                color: Color(0xFF0F172A),
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            if (item.work?.trailaId != null && item.work!.trailaId!.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.local_shipping_outlined, size: 12, color: Color(0xFF475569)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Traila #${item.work!.trailaId}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time_rounded, size: 13, color: Colors.grey.shade500),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat('dd MMM yyyy, hh:mm a').format(item.date),
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              '• ${item.subtitle}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Amount & Running Balance Badge
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${isWork ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(item.amount)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          color: isWork ? const Color(0xFF0F172A) : const Color(0xFF16A34A),
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      _buildLabourBalanceBadge(item.runningBalance),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
+
+              // 2. Clear Body Breakdown
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isWork ? const Color(0xFFF8FAFC) : const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isWork ? const Color(0xFFEEF2F6) : const Color(0xFFDCFCE7),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          isWork ? Icons.assignment_outlined : Icons.check_circle_outline_rounded,
+                          size: 16,
+                          color: isWork ? const Color(0xFF475569) : const Color(0xFF16A34A),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isWork
+                              ? (item.work?.description.isNotEmpty == true
+                                  ? item.work!.description
+                                  : 'Work completed for ${widget.labour.name}')
+                              : 'Wage payment disbursed via ${item.payment?.method ?? "Cash"}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isWork ? const Color(0xFF334155) : const Color(0xFF15803D),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (!isWork && item.payment?.receiptNumber?.isNotEmpty == true)
+                      Text(
+                        'Receipt: ${item.payment!.receiptNumber}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // 3. Action Toolbar
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final state = context.read<ERPCubit>().state;
+                      try {
+                        if (isWork && item.work != null) {
+                          await ThermalPrinterService.printLabourWork(
+                            context,
+                            labour: widget.labour,
+                            work: item.work!,
+                            profile: state.appProfile,
+                            settings: state.printerSetting,
+                            printDuplicate: true,
+                          );
+                        } else if (!isWork && item.payment != null) {
+                          await ThermalPrinterService.printLabourPayment(
+                            context,
+                            labour: widget.labour,
+                            payment: item.payment!,
+                            previousBalance: item.payment!.previousBalance ?? 0,
+                            newBalance: item.runningBalance,
+                            profile: state.appProfile,
+                            settings: state.printerSetting,
+                            printDuplicate: true,
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print error: $e')));
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.receipt_rounded, size: 15),
+                    label: const Text('Thermal Receipt (58/80mm)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF0F172A),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final state = context.read<ERPCubit>().state;
+                      if (isWork && item.work != null) {
+                        final pdfBytes = await InvoicePdfService.generateLabourWorkPdf(
+                          labourName: widget.labour.name,
+                          date: DateFormat('dd-MM-yyyy').format(item.work!.date),
+                          trailaId: item.work!.trailaId,
+                          workPrice: item.work!.cost,
+                          previousBalance: item.work!.previousOutstanding,
+                          newBalance: item.runningBalance,
+                          profile: state.appProfile,
+                        );
+                        if (!context.mounted) return;
+                        await PrintPreviewDialog.show(
+                          context,
+                          pdfBytes,
+                          'Work_${item.work!.entryNumber}.pdf',
+                        );
+                      } else if (!isWork && item.payment != null) {
+                        final pdfBytes = await InvoicePdfService.generateLabourPaymentPdf(
+                          labourName: widget.labour.name,
+                          date: DateFormat('dd-MM-yyyy').format(item.payment!.date),
+                          paymentMethod: item.payment!.method,
+                          paidAmount: item.payment!.amount,
+                          previousBalance: item.payment!.previousBalance ?? 0,
+                          newBalance: item.runningBalance,
+                          profile: state.appProfile,
+                        );
+                        if (!context.mounted) return;
+                        await PrintPreviewDialog.show(
+                          context,
+                          pdfBytes,
+                          'Payment_${widget.labour.name}.pdf',
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 15, color: Color(0xFFEF4444)),
+                    label: const Text('PDF Invoice', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      side: const BorderSide(color: Color(0xFFFCA5A5)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, size: 19, color: Color(0xFFEF4444)),
+                    tooltip: 'Delete entry',
+                    style: IconButton.styleFrom(
+                      hoverColor: const Color(0xFFFEE2E2),
+                    ),
+                    onPressed: () {
+                      if (isWork && item.work != null) {
+                        widget.onDeleteWork(item.work!.id);
+                      } else if (!isWork && item.payment != null) {
+                        widget.onDeletePayment(item.payment!.id);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

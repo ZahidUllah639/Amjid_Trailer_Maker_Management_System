@@ -1,7 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'add_khata_dialog.dart';
 
+/// A world-class, glassmorphic desktop navigation sidebar for Amjid Trailer Makers ERP.
+/// Features frosted acrylic blur, neon active capsule glows, smooth glide hover effects,
+/// modern iconography, and professional enterprise section hierarchy.
 class Sidebar extends StatelessWidget {
   final bool isCollapsed;
   final VoidCallback onToggle;
@@ -19,178 +23,208 @@ class Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 260),
       curve: Curves.easeInOutCubic,
-      width: isCollapsed ? 84 : 270,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF0F172A), // Slate 900
-            Color(0xFF090D16), // Darker Obsidian
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 12,
-            offset: Offset(4, 0),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildBrandHeader(context),
-          const SizedBox(height: 12),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionHeader('CORE'),
-                  _SidebarItem(
-                    icon: Icons.space_dashboard_rounded,
-                    label: 'Dashboard',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 0,
-                    onTap: () => onIndexChanged(0),
-                  ),
-                  _SidebarItem(
-                    icon: Icons.local_shipping_rounded,
-                    label: 'Traila Register',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 1,
-                    onTap: () => onIndexChanged(1),
-                  ),
-
-                  const SizedBox(height: 14),
-                  _buildSectionHeader('OPERATIONS'),
-                  _SidebarItem(
-                    icon: Icons.inventory_2_rounded,
-                    label: 'Supplier Khata',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 2,
-                    onTap: () => onIndexChanged(2),
-                  ),
-                  _SidebarItem(
-                    icon: Icons.badge_rounded,
-                    label: 'Labour Management',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 3,
-                    onTap: () => onIndexChanged(3),
-                  ),
-                  _SidebarItem(
-                    icon: Icons.menu_book_rounded,
-                    label: 'General Khata',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 4,
-                    onTap: () => onIndexChanged(4),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.add_circle, size: 18, color: Color(0xFF818CF8)),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => const AddKhataDialog(),
-                        );
-                      },
-                      tooltip: 'Add New Khata',
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-                  _buildSectionHeader('FINANCE & SALES'),
-                  _SidebarItem(
-                    icon: Icons.point_of_sale_rounded,
-                    label: 'Sales & Invoices',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 5,
-                    onTap: () => onIndexChanged(5),
-                  ),
-                  _SidebarItem(
-                    icon: Icons.pie_chart_rounded,
-                    label: 'Expense & Revenue',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 6,
-                    onTap: () => onIndexChanged(6),
-                  ),
-                  _SidebarItem(
-                    icon: Icons.account_balance_wallet_rounded,
-                    label: 'Cash & Bank Flow',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 7,
-                    onTap: () => onIndexChanged(7),
-                  ),
-
-                  const SizedBox(height: 14),
-                  _buildSectionHeader('PREFERENCES'),
-                  _SidebarItem(
-                    icon: Icons.storefront_rounded,
-                    label: 'Business Profile',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 8,
-                    onTap: () => onIndexChanged(8),
-                  ),
-                  _SidebarItem(
-                    icon: Icons.print_rounded,
-                    label: 'Thermal & A4 Printer',
-                    isCollapsed: isCollapsed,
-                    isActive: selectedIndex == 9,
-                    onTap: () => onIndexChanged(9),
-                  ),
+      width: isCollapsed ? 88 : 280,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xF50A101D), // Dark Translucent Obsidian Glass
+                  Color(0xFA050811), // Deep Pitch Slate
                 ],
               ),
+              border: const Border(
+                right: BorderSide(
+                  color: Color(0x1F818CF8), // Ultra-fine glowing indigo glass edge
+                  width: 1.2,
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 20,
+                  offset: const Offset(4, 0),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                _buildGlassBrandHeader(context),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionHeader('EXECUTIVE COMMAND'),
+                        _GlassSidebarItem(
+                          icon: Icons.grid_view_rounded,
+                          label: 'Executive Command',
+                          subtitle: 'Live KPI & Analytics',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 0,
+                          onTap: () => onIndexChanged(0),
+                        ),
+                        _GlassSidebarItem(
+                          icon: Icons.precision_manufacturing_rounded,
+                          label: 'Fleet & Manufacturing',
+                          subtitle: 'Traila Units & Register',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 1,
+                          onTap: () => onIndexChanged(1),
+                        ),
+
+                        const SizedBox(height: 16),
+                        _buildSectionHeader('COMMERCE & LEDGERS'),
+                        _GlassSidebarItem(
+                          icon: Icons.factory_rounded,
+                          label: 'Vendor Payables (Suppliers)',
+                          subtitle: 'Raw Materials & Parts',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 2,
+                          onTap: () => onIndexChanged(2),
+                        ),
+                        _GlassSidebarItem(
+                          icon: Icons.engineering_rounded,
+                          label: 'Workforce & Payroll',
+                          subtitle: 'Labour Wages & Jobs',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 3,
+                          onTap: () => onIndexChanged(3),
+                        ),
+                        _GlassSidebarItem(
+                          icon: Icons.account_balance_rounded,
+                          label: 'Customer Accounts (Khata)',
+                          subtitle: 'Receivables & Udhaar',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 4,
+                          onTap: () => onIndexChanged(4),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.add_circle, size: 18, color: Color(0xFF38BDF8)),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => const AddKhataDialog(),
+                              );
+                            },
+                            tooltip: 'Quick Add Customer Khata',
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+                        _buildSectionHeader('FINANCE & LIQUIDITY'),
+                        _GlassSidebarItem(
+                          icon: Icons.receipt_long_rounded,
+                          label: 'Sales & Invoicing',
+                          subtitle: 'Dispatches & Receipts',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 5,
+                          onTap: () => onIndexChanged(5),
+                        ),
+                        _GlassSidebarItem(
+                          icon: Icons.insights_rounded,
+                          label: 'Revenue & Analytics',
+                          subtitle: 'P&L, Margins & Cashflow',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 6,
+                          onTap: () => onIndexChanged(6),
+                        ),
+                        _GlassSidebarItem(
+                          icon: Icons.account_balance_wallet_rounded,
+                          label: 'Treasury & Digital Vault',
+                          subtitle: 'Cash Drawers, Banks & Wallets',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 7,
+                          onTap: () => onIndexChanged(7),
+                        ),
+
+                        const SizedBox(height: 16),
+                        _buildSectionHeader('SYSTEM PREFERENCES'),
+                        _GlassSidebarItem(
+                          icon: Icons.corporate_fare_rounded,
+                          label: 'Enterprise Identity',
+                          subtitle: 'Company Profile & Branding',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 8,
+                          onTap: () => onIndexChanged(8),
+                        ),
+                        _GlassSidebarItem(
+                          icon: Icons.print_rounded,
+                          label: 'Thermal & Hardware POS',
+                          subtitle: '58mm / 80mm ESC-POS Printer',
+                          isCollapsed: isCollapsed,
+                          isActive: selectedIndex == 9,
+                          onTap: () => onIndexChanged(9),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                _buildGlassFooter(context),
+              ],
             ),
           ),
-          _buildFooter(context),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildSectionHeader(String title) {
-    if (isCollapsed) return const SizedBox(height: 8);
+    if (isCollapsed) return const SizedBox(height: 6);
     return Padding(
-      padding: const EdgeInsets.only(left: 14, top: 4, bottom: 6),
+      padding: const EdgeInsets.only(left: 14, top: 4, bottom: 8),
       child: Text(
         title,
         style: const TextStyle(
           color: Color(0xFF64748B),
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
+          fontSize: 9.5,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.3,
         ),
       ),
     );
   }
 
-  Widget _buildBrandHeader(BuildContext context) {
+  Widget _buildGlassBrandHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFF1E293B), width: 1),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.02),
+        border: const Border(
+          bottom: BorderSide(color: Color(0x1F334155), width: 1),
         ),
       ),
       child: Row(
         mainAxisAlignment: isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
         children: [
+          // Glass Floating Logo Capsule
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFF818CF8).withValues(alpha: 0.4),
+                width: 1.5,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.35),
-                  blurRadius: 10,
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                  blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),
               ],
@@ -209,12 +243,12 @@ class Sidebar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'TRAILA ERP',
+                    'AMJID TRAILER',
                     style: TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 17,
-                      letterSpacing: 1.1,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                      letterSpacing: 0.8,
                     ),
                   ),
                   Row(
@@ -222,18 +256,24 @@ class Sidebar extends StatelessWidget {
                       Container(
                         width: 7,
                         height: 7,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF10B981),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
                           shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.6),
+                              blurRadius: 6,
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 6),
                       const Text(
-                        'Workshop v2.4',
+                        'Industrial Suite v3.0',
                         style: TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -247,35 +287,37 @@ class Sidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter(BuildContext context) {
+  Widget _buildGlassFooter(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: Color(0xFF1E293B), width: 1),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.02),
+        border: const Border(
+          top: BorderSide(color: Color(0x1F334155), width: 1),
         ),
       ),
       child: Column(
         children: [
           if (!isCollapsed)
             Container(
-              margin: const EdgeInsets.only(bottom: 10),
+              margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B).withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(8),
+                color: const Color(0xFF0F172A).withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.storage_rounded, size: 14, color: Color(0xFF10B981)),
+                  Icon(Icons.storage_rounded, size: 14, color: Color(0xFF38BDF8)),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Local SQLite Active',
+                      'Drift SQLite Engine • Active',
                       style: TextStyle(
-                        color: Color(0xFF94A3B8),
+                        color: Color(0xFFCBD5E1),
                         fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -292,30 +334,35 @@ class Sidebar extends StatelessWidget {
                   color: const Color(0xFF94A3B8),
                   size: 20,
                 ),
-                tooltip: isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar',
+                tooltip: isCollapsed ? 'Expand Navigation' : 'Collapse Navigation',
                 onPressed: onToggle,
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white.withValues(alpha: 0.04),
+                  hoverColor: const Color(0xFF4F46E5).withValues(alpha: 0.2),
+                ),
               ),
               if (!isCollapsed)
                 InkWell(
                   onTap: () async => await windowManager.close(),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEF4444).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.25)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.power_settings_new_rounded, size: 16, color: Color(0xFFF87171)),
+                        Icon(Icons.power_settings_new_rounded, size: 15, color: Color(0xFFF87171)),
                         SizedBox(width: 6),
                         Text(
-                          'Exit',
+                          'Exit Kiosk',
                           style: TextStyle(
                             color: Color(0xFFF87171),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -330,17 +377,19 @@ class Sidebar extends StatelessWidget {
   }
 }
 
-class _SidebarItem extends StatefulWidget {
+class _GlassSidebarItem extends StatefulWidget {
   final IconData icon;
   final String label;
+  final String subtitle;
   final bool isCollapsed;
   final bool isActive;
   final VoidCallback onTap;
   final Widget? trailing;
 
-  const _SidebarItem({
+  const _GlassSidebarItem({
     required this.icon,
     required this.label,
+    required this.subtitle,
     required this.isCollapsed,
     required this.isActive,
     required this.onTap,
@@ -348,17 +397,14 @@ class _SidebarItem extends StatefulWidget {
   });
 
   @override
-  State<_SidebarItem> createState() => _SidebarItemState();
+  State<_GlassSidebarItem> createState() => _GlassSidebarItemState();
 }
 
-class _SidebarItemState extends State<_SidebarItem> {
+class _GlassSidebarItemState extends State<_GlassSidebarItem> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final activeBg = const Color(0xFF4F46E5);
-    final hoverBg = Colors.white.withValues(alpha: 0.05);
-
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -366,23 +412,45 @@ class _SidebarItemState extends State<_SidebarItem> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          margin: const EdgeInsets.symmetric(vertical: 2.5),
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.symmetric(vertical: 3),
+          transform: Matrix4.translationValues(_isHovered && !widget.isActive ? 4.0 : 0.0, 0.0, 0.0),
           padding: EdgeInsets.symmetric(
             horizontal: widget.isCollapsed ? 12 : 14,
             vertical: 10,
           ),
           decoration: BoxDecoration(
-            color: widget.isActive
-                ? activeBg
-                : (_isHovered ? hoverBg : Colors.transparent),
-            borderRadius: BorderRadius.circular(10),
+            gradient: widget.isActive
+                ? const LinearGradient(
+                    colors: [
+                      Color(0xFF4F46E5), // Electric Indigo
+                      Color(0xFF7C3AED), // Violet
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  )
+                : (_isHovered
+                    ? LinearGradient(
+                        colors: [
+                          Colors.white.withValues(alpha: 0.08),
+                          Colors.white.withValues(alpha: 0.03),
+                        ],
+                      )
+                    : null),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: widget.isActive
+                  ? const Color(0xFF818CF8).withValues(alpha: 0.5)
+                  : (_isHovered ? Colors.white.withValues(alpha: 0.12) : Colors.transparent),
+              width: 1,
+            ),
             boxShadow: widget.isActive
                 ? [
                     BoxShadow(
-                      color: activeBg.withValues(alpha: 0.4),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
+                      color: const Color(0xFF4F46E5).withValues(alpha: 0.45),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
                     ),
                   ]
                 : null,
@@ -390,27 +458,54 @@ class _SidebarItemState extends State<_SidebarItem> {
           child: Row(
             mainAxisAlignment: widget.isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
             children: [
-              Icon(
-                widget.icon,
-                color: widget.isActive
-                    ? Colors.white
-                    : (_isHovered ? Colors.white : const Color(0xFF94A3B8)),
-                size: 20,
+              // Icon with indicator glow
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: widget.isActive
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : (_isHovered ? const Color(0xFF6366F1).withValues(alpha: 0.15) : Colors.transparent),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(
+                  widget.icon,
+                  color: widget.isActive
+                      ? Colors.white
+                      : (_isHovered ? const Color(0xFF38BDF8) : const Color(0xFF94A3B8)),
+                  size: 20,
+                ),
               ),
               if (!widget.isCollapsed) ...[
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    widget.label,
-                    style: TextStyle(
-                      color: widget.isActive
-                          ? Colors.white
-                          : (_isHovered ? const Color(0xFFF1F5F9) : const Color(0xFFCBD5E1)),
-                      fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 13.5,
-                      letterSpacing: 0.1,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.label,
+                        style: TextStyle(
+                          color: widget.isActive
+                              ? Colors.white
+                              : (_isHovered ? Colors.white : const Color(0xFFE2E8F0)),
+                          fontWeight: widget.isActive ? FontWeight.w700 : FontWeight.w600,
+                          fontSize: 13,
+                          letterSpacing: 0.1,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        widget.subtitle,
+                        style: TextStyle(
+                          color: widget.isActive
+                              ? const Color(0xFFE0E7FF)
+                              : const Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 10,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
                 if (widget.trailing != null && !widget.isActive) widget.trailing!,
@@ -422,4 +517,3 @@ class _SidebarItemState extends State<_SidebarItem> {
     );
   }
 }
-
