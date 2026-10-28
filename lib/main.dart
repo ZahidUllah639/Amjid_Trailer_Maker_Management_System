@@ -12,14 +12,16 @@ void main() async {
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = const WindowOptions(
+    title: 'Master Trailers',
     size: Size(1280, 800),
     center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.hidden, // Removes minimize/maximize/close buttons
+    titleBarStyle: TitleBarStyle.hidden, // Window controls handled in app header
   );
 
   windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.setTitle('Master Trailers');
     await windowManager.show();
     await windowManager.focus();
     await windowManager.maximize(); // Open in full window
@@ -36,7 +38,7 @@ class TrailaApp extends StatelessWidget {
     return BlocProvider(
       create: (context) => ERPCubit(),
       child: MaterialApp(
-        title: 'Traila ERP',
+        title: 'Master Trailers',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(

@@ -541,16 +541,17 @@ class InvoicePdfService {
     final data = items.map((item) => [
       item.name,
       item.quantity.toString(),
-      item.unitPrice.toStringAsFixed(0),
-      (item.quantity * item.unitPrice).toStringAsFixed(0),
+      "Rs. ${_currencyFormat.format(item.unitPrice)}",
+      "Rs. ${_currencyFormat.format(item.quantity * item.unitPrice)}",
     ]).toList();
 
     return pw.TableHelper.fromTextArray(
       headers: headers,
       data: data,
       border: pw.TableBorder.all(color: PdfColors.grey300),
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9.5),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.blue900),
+      cellStyle: const pw.TextStyle(fontSize: 9),
       cellAlignment: pw.Alignment.centerLeft,
       columnWidths: {
         0: const pw.FlexColumnWidth(3),
@@ -567,26 +568,27 @@ class InvoicePdfService {
       DateFormat('dd-MM-yyyy').format(item.date),
       item.description ?? 'Payment',
       item.type == KhataTransactionType.cashIn ? 'IN' : 'OUT',
-      item.amount.toStringAsFixed(0),
+      "Rs. ${_currencyFormat.format(item.amount)}",
     ]).toList();
 
     return pw.TableHelper.fromTextArray(
       headers: headers,
       data: data,
       border: pw.TableBorder.all(color: PdfColors.grey300),
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9.5),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.blue900),
+      cellStyle: const pw.TextStyle(fontSize: 9),
       cellAlignment: pw.Alignment.centerLeft,
     );
   }
 
   static pw.Widget _buildSalePaymentTable(List<Payment> payments) {
-    final headers = ['Date', 'Method', 'Paid', 'Balance'];
+    final headers = ['Date', 'Method', 'Paid Amount', 'Updated Balance'];
     final List<List<dynamic>> data = payments.map((p) => [
       DateFormat('dd-MM-yyyy').format(p.date),
       p.method,
-      p.amount.toStringAsFixed(0),
-      (p.updatedBalance ?? 0.0).toStringAsFixed(0),
+      "Rs. ${_currencyFormat.format(p.amount)}",
+      "Rs. ${_currencyFormat.format(p.updatedBalance ?? 0.0)}",
     ]).toList();
 
     return pw.TableHelper.fromTextArray(
@@ -599,8 +601,8 @@ class InvoicePdfService {
       cellAlignment: pw.Alignment.centerLeft,
       columnWidths: {
         0: const pw.FlexColumnWidth(1.2),
-        1: const pw.FlexColumnWidth(2),
-        2: const pw.FlexColumnWidth(1),
+        1: const pw.FlexColumnWidth(1.8),
+        2: const pw.FlexColumnWidth(1.2),
         3: const pw.FlexColumnWidth(1.2),
       },
     );
@@ -623,8 +625,8 @@ class InvoicePdfService {
             pw.Divider(color: PdfColors.blue900, thickness: 1.5, indent: 200),
             pw.SizedBox(height: 10),
             pw.Text(
-              "Calculation: ${khata.totalAmount.toStringAsFixed(0)} - ${khata.paidAmount.toStringAsFixed(0)} = ${khata.remainingBalance.toStringAsFixed(0)}",
-              style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey700),
+              "Calculation: ${_currencyFormat.format(khata.totalAmount)} - ${_currencyFormat.format(khata.paidAmount)} = ${_currencyFormat.format(khata.remainingBalance)}",
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
             ),
           ],
         ),
@@ -634,28 +636,30 @@ class InvoicePdfService {
 
   static pw.Widget _buildPaymentTable(double amount) {
     final headers = ['Description', 'Amount'];
-    final data = [['Payment Received', amount.toStringAsFixed(0)]];
+    final data = [['Payment Received', "Rs. ${_currencyFormat.format(amount)}"]];
 
     return pw.TableHelper.fromTextArray(
       headers: headers,
       data: data,
       border: pw.TableBorder.all(color: PdfColors.grey300),
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9.5),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.blue900),
+      cellStyle: const pw.TextStyle(fontSize: 9),
       cellAlignment: pw.Alignment.centerLeft,
     );
   }
 
   static pw.Widget _buildWorkTable(double amount) {
     final headers = ['Description', 'Amount'];
-    final data = [['Work Charges', amount.toStringAsFixed(0)]];
+    final data = [['Work Charges', "Rs. ${_currencyFormat.format(amount)}"]];
 
     return pw.TableHelper.fromTextArray(
       headers: headers,
       data: data,
       border: pw.TableBorder.all(color: PdfColors.grey300),
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9.5),
       headerDecoration: const pw.BoxDecoration(color: PdfColors.blue900),
+      cellStyle: const pw.TextStyle(fontSize: 9),
       cellAlignment: pw.Alignment.centerLeft,
     );
   }
@@ -704,7 +708,7 @@ class InvoicePdfService {
                   ),
                   pw.SizedBox(height: 2),
                   pw.Text(
-                    "${previousBalance.toStringAsFixed(0)} ${isCredit ? '-' : '+'} ${invoiceBalance.toStringAsFixed(0)} ${paymentAmount > 0.01 ? '- ${paymentAmount.toStringAsFixed(0)}' : ''} = ${finalBalance.toStringAsFixed(0)}",
+                    "${_currencyFormat.format(previousBalance)} ${isCredit ? '-' : '+'} ${_currencyFormat.format(invoiceBalance)} ${paymentAmount > 0.01 ? '- ${_currencyFormat.format(paymentAmount)}' : ''} = ${_currencyFormat.format(finalBalance)}",
                     style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700),
                   ),
                 ],
@@ -740,8 +744,8 @@ class InvoicePdfService {
   static pw.Widget _buildThermalMetaBox(List<MapEntry<String, String>> entries) {
     return pw.Container(
       width: double.infinity,
-      margin: const pw.EdgeInsets.only(bottom: 6),
-      padding: const pw.EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+      margin: const pw.EdgeInsets.only(bottom: 5),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 2, vertical: 2.5),
       decoration: const pw.BoxDecoration(
         border: pw.Border(
           top: pw.BorderSide(color: PdfColors.black, width: 0.6),
@@ -750,12 +754,20 @@ class InvoicePdfService {
       ),
       child: pw.Column(
         children: entries.map((e) => pw.Padding(
-          padding: const pw.EdgeInsets.symmetric(vertical: 1),
+          padding: const pw.EdgeInsets.symmetric(vertical: 0.8),
           child: pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text(e.key, style: const pw.TextStyle(fontSize: 8)),
-              pw.Text(e.value, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+              pw.Text(e.key, style: const pw.TextStyle(fontSize: 7.8)),
+              pw.SizedBox(width: 4),
+              pw.Expanded(
+                child: pw.Text(
+                  e.value,
+                  style: pw.TextStyle(fontSize: 8.2, fontWeight: pw.FontWeight.bold),
+                  textAlign: pw.TextAlign.right,
+                ),
+              ),
             ],
           ),
         )).toList(),
@@ -767,14 +779,14 @@ class InvoicePdfService {
     return pw.Container(
       width: double.infinity,
       margin: const pw.EdgeInsets.only(top: 3, bottom: 4),
-      padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2.5),
       decoration: const pw.BoxDecoration(
         color: PdfColors.grey200,
         borderRadius: pw.BorderRadius.all(pw.Radius.circular(2)),
       ),
       child: pw.Text(
         "Audit: $formula",
-        style: pw.TextStyle(fontSize: 7.5, fontStyle: pw.FontStyle.italic),
+        style: pw.TextStyle(fontSize: 7.2, fontStyle: pw.FontStyle.italic),
         textAlign: pw.TextAlign.center,
       ),
     );
@@ -784,7 +796,7 @@ class InvoicePdfService {
     String displayLabel = label;
     String displayVal;
 
-    if (label.toUpperCase().contains('BALANCE') || label.toUpperCase().contains('TOTAL') || label.toUpperCase().contains('REMAINING')) {
+    if (label.toUpperCase().contains('BALANCE') || label.toUpperCase().contains('TOTAL') || label.toUpperCase().contains('REMAINING') || label.toUpperCase().contains('DUE')) {
       if (value < -0.01) {
         displayLabel = "ADVANCE CREDIT:";
         displayVal = "Rs. ${_currencyFormat.format(value.abs())}";
@@ -801,29 +813,42 @@ class InvoicePdfService {
     if (isBold) {
       return pw.Container(
         width: double.infinity,
-        margin: const pw.EdgeInsets.symmetric(vertical: 4),
-        padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+        margin: const pw.EdgeInsets.symmetric(vertical: 3.5),
+        padding: const pw.EdgeInsets.symmetric(horizontal: 4.5, vertical: 3.5),
         decoration: pw.BoxDecoration(
-          border: pw.Border.all(color: PdfColors.black, width: 1.2),
+          border: pw.Border.all(color: PdfColors.black, width: 1.0),
           borderRadius: const pw.BorderRadius.all(pw.Radius.circular(2)),
         ),
         child: pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
-            pw.Text(displayLabel, style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
-            pw.Text(displayVal, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+            pw.Expanded(
+              child: pw.Text(
+                displayLabel,
+                style: pw.TextStyle(fontSize: 8.2, fontWeight: pw.FontWeight.bold),
+              ),
+            ),
+            pw.SizedBox(width: 4),
+            pw.Text(
+              displayVal,
+              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+            ),
           ],
         ),
       );
     }
 
     return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 1.5),
+      padding: const pw.EdgeInsets.symmetric(vertical: 1.2),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(displayLabel, style: const pw.TextStyle(fontSize: 8.5)),
-          pw.Text(displayVal, style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+          pw.Expanded(
+            child: pw.Text(displayLabel, style: const pw.TextStyle(fontSize: 8)),
+          ),
+          pw.SizedBox(width: 4),
+          pw.Text(displayVal, style: pw.TextStyle(fontSize: 8.2, fontWeight: pw.FontWeight.bold)),
         ],
       ),
     );
@@ -1121,17 +1146,21 @@ class InvoicePdfService {
                   // Prominent Amount Box
                   pw.Container(
                     width: double.infinity,
-                    margin: const pw.EdgeInsets.symmetric(vertical: 3),
-                    padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                    margin: const pw.EdgeInsets.symmetric(vertical: 2.5),
+                    padding: const pw.EdgeInsets.symmetric(vertical: 3.5, horizontal: 5),
                     decoration: const pw.BoxDecoration(
                       color: PdfColors.grey200,
                       borderRadius: pw.BorderRadius.all(pw.Radius.circular(2)),
                     ),
                     child: pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        pw.Text("AMOUNT PAID:", style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
-                        pw.Text(_formatRs(amount), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                        pw.Expanded(
+                          child: pw.Text("AMOUNT PAID:", style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.SizedBox(width: 4),
+                        pw.Text(_formatRs(amount), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -1200,17 +1229,21 @@ class InvoicePdfService {
                   // Prominent Received Amount Box
                   pw.Container(
                     width: double.infinity,
-                    margin: const pw.EdgeInsets.symmetric(vertical: 3),
-                    padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                    margin: const pw.EdgeInsets.symmetric(vertical: 2.5),
+                    padding: const pw.EdgeInsets.symmetric(vertical: 3.5, horizontal: 5),
                     decoration: const pw.BoxDecoration(
                       color: PdfColors.grey200,
                       borderRadius: pw.BorderRadius.all(pw.Radius.circular(2)),
                     ),
                     child: pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        pw.Text("AMOUNT RECEIVED:", style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
-                        pw.Text(_formatRs(payment.amount), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                        pw.Expanded(
+                          child: pw.Text("AMOUNT RECEIVED:", style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.SizedBox(width: 4),
+                        pw.Text(_formatRs(payment.amount), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -1312,17 +1345,21 @@ class InvoicePdfService {
                   // Work Charge Box
                   pw.Container(
                     width: double.infinity,
-                    margin: const pw.EdgeInsets.symmetric(vertical: 3),
-                    padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                    margin: const pw.EdgeInsets.symmetric(vertical: 2.5),
+                    padding: const pw.EdgeInsets.symmetric(vertical: 3.5, horizontal: 5),
                     decoration: const pw.BoxDecoration(
                       color: PdfColors.grey200,
                       borderRadius: pw.BorderRadius.all(pw.Radius.circular(2)),
                     ),
                     child: pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        pw.Text("WORK CHARGES:", style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
-                        pw.Text(_formatRs(work.cost), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                        pw.Expanded(
+                          child: pw.Text("WORK CHARGES:", style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.SizedBox(width: 4),
+                        pw.Text(_formatRs(work.cost), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -1576,17 +1613,21 @@ class InvoicePdfService {
                   // Amount Box
                   pw.Container(
                     width: double.infinity,
-                    margin: const pw.EdgeInsets.symmetric(vertical: 4),
-                    padding: const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                    margin: const pw.EdgeInsets.symmetric(vertical: 2.5),
+                    padding: const pw.EdgeInsets.symmetric(vertical: 3.5, horizontal: 5),
                     decoration: const pw.BoxDecoration(
                       color: PdfColors.grey200,
                       borderRadius: pw.BorderRadius.all(pw.Radius.circular(2)),
                     ),
                     child: pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        pw.Text("TRANSACTION AMOUNT:", style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
-                        pw.Text(_formatRs(transaction.amount), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                        pw.Expanded(
+                          child: pw.Text("TRANSACTION AMOUNT:", style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                        ),
+                        pw.SizedBox(width: 4),
+                        pw.Text(_formatRs(transaction.amount), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                       ],
                     ),
                   ),

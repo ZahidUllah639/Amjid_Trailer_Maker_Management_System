@@ -13,7 +13,7 @@ class UnifiedPrintService {
 
   static pw.MemoryImage? _cachedThermalLogo;
 
-  /// Processes the logo for thermal printing: Emblem Crop -> Grayscale -> Smart Polarity Inversion -> Pure Monochrome
+  /// Processes the logo for thermal printing: Emblem Crop -> Grayscale -> Smart Polarity Inversion -> Smooth Anti-Aliasing
   static Future<pw.MemoryImage> _getThermalLogo() async {
     if (_cachedThermalLogo != null) return _cachedThermalLogo!;
     try {
@@ -33,25 +33,18 @@ class UnifiedPrintService {
       final cropH = (gray.height * 0.52).round();
       img.Image emblem = img.copyCrop(gray, x: cropX, y: cropY, width: cropW, height: cropH);
 
-      // 3. Resize to optimal thermal print resolution (300px width)
-      emblem = img.copyResize(emblem, width: 300, interpolation: img.Interpolation.linear);
+      // 3. Resize with high-quality cubic interpolation to 400px width for silky curves
+      emblem = img.copyResize(emblem, width: 400, interpolation: img.Interpolation.cubic);
 
       // 4. Detect background polarity from corners
       final c1 = emblem.getPixel(2, 2);
       final c2 = emblem.getPixel(emblem.width - 3, 2);
-      final c3 = emblem.getPixel(2, emblem.height - 3);
-      final c4 = emblem.getPixel(emblem.width - 3, emblem.height - 3);
-      final double cornerLuma = (
-        (0.299 * c1.r + 0.587 * c1.g + 0.114 * c1.b) +
-        (0.299 * c2.r + 0.587 * c2.g + 0.114 * c2.b) +
-        (0.299 * c3.r + 0.587 * c3.g + 0.114 * c3.b) +
-        (0.299 * c4.r + 0.587 * c4.g + 0.114 * c4.b)
-      ) / (4.0 * 255.0);
+      final double cornerLuma = (c1.r + c2.r) / (2.0 * 255.0);
 
       // If background is dark, invert so background stays clean white paper
       final bool invert = cornerLuma < 0.5;
 
-      // 5. Thresholding for pure High-Contrast Monochrome
+      // 5. Smooth Hermite S-Curve Contrast Enhancement (keeps anti-aliased curves without jagged 1-bit noise)
       final output = img.Image(width: emblem.width, height: emblem.height);
       for (int y = 0; y < emblem.height; y++) {
         for (int x = 0; x < emblem.width; x++) {
@@ -60,11 +53,17 @@ class UnifiedPrintService {
           if (invert) {
             l = 1.0 - l;
           }
-          if (l < 0.48) {
-            output.setPixelRgb(x, y, 0, 0, 0);
+          double val;
+          if (l >= 0.58) {
+            val = 1.0; // clean white paper
+          } else if (l <= 0.28) {
+            val = 0.0; // rich black linework
           } else {
-            output.setPixelRgb(x, y, 255, 255, 255);
+            double t = (l - 0.28) / (0.58 - 0.28);
+            val = t * t * (3.0 - 2.0 * t); // smooth Hermite curve
           }
+          int byteVal = (val * 255.0).round().clamp(0, 255);
+          output.setPixelRgb(x, y, byteVal, byteVal, byteVal);
         }
       }
       
@@ -76,56 +75,132 @@ class UnifiedPrintService {
     }
   }
 
-  // --- PDF Logic ---
+  // --- EXECUTIVE A4 PDF HEADER & FOOTER ---
 
   static Future<pw.Widget> buildPdfHeader(AppProfile? profile, String title) async {
     final logoData = await rootBundle.load(logoPath);
     final logo = pw.MemoryImage(logoData.buffer.asUint8List());
 
+    final businessName = (profile?.businessName?.isNotEmpty == true 
+        ? profile!.businessName! 
+        : 'Amjid Trailer Makers').toUpperCase();
+    final address = profile?.address?.isNotEmpty == true 
+        ? profile!.address! 
+        : 'Main Hazar Khwani, Ring Road Peshawar';
+    final phone = profile?.phoneNumber.isNotEmpty == true 
+        ? profile!.phoneNumber 
+        : '0300-5824833 | 0316-7766798';
+
     return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        // Center the Logo and make it large
-        pw.Center(
-          child: pw.Container(
-            height: 180, 
-            width: 180,
-            child: pw.Image(logo, fit: pw.BoxFit.contain),
+        // Top Corporate Duo-Tone Accent Bar
+        pw.Container(
+          height: 3.5,
+          width: double.infinity,
+          decoration: const pw.BoxDecoration(
+            color: PdfColors.blue900,
+            borderRadius: pw.BorderRadius.all(pw.Radius.circular(2)),
           ),
         ),
-        pw.SizedBox(height: 15),
-        
-        // Center the Business Info
-        pw.Center(
-          child: pw.Column(
-            children: [
-              pw.Text('Amjid Trailer Makers', 
-                  style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-              pw.SizedBox(height: 5),
-              pw.Text('Main Hazar Khwani Ring Road Peshawar', 
-                  style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 2),
-              pw.Text('03005824833 | 03167766798', 
-                  style: const pw.TextStyle(fontSize: 12)),
-            ],
-          ),
-        ),
-        pw.SizedBox(height: 20),
-        
-        // Invoice Title
-        pw.Center(
-          child: pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-            decoration: const pw.BoxDecoration(
-              color: PdfColors.blue50,
-              borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+        pw.SizedBox(height: 12),
+
+        // Horizontal Executive Layout
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            // Left: Logo & Company Brand Cluster
+            pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Container(
+                  height: 65,
+                  width: 65,
+                  decoration: pw.BoxDecoration(
+                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                    border: pw.Border.all(color: PdfColors.grey300, width: 0.8),
+                  ),
+                  child: pw.ClipRRect(
+                    horizontalRadius: 6,
+                    verticalRadius: 6,
+                    child: pw.Image(logo, fit: pw.BoxFit.contain),
+                  ),
+                ),
+                pw.SizedBox(width: 14),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      businessName,
+                      style: pw.TextStyle(
+                        fontSize: 18,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      'INDUSTRIAL FLEET & HEAVY TRAILER MANUFACTURING',
+                      style: pw.TextStyle(
+                        fontSize: 7.5,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.grey700,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    pw.SizedBox(height: 3),
+                    pw.Text(
+                      address,
+                      style: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey800),
+                    ),
+                    pw.SizedBox(height: 1),
+                    pw.Text(
+                      'Contact: $phone',
+                      style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            child: pw.Text(title.toUpperCase(), 
-                style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
-          ),
+
+            // Right: Document Badge & Meta Pill
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                  decoration: const pw.BoxDecoration(
+                    color: PdfColors.blue900,
+                    borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+                  ),
+                  child: pw.Text(
+                    title.toUpperCase(),
+                    style: pw.TextStyle(
+                      fontSize: 13,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.white,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 5),
+                pw.Text(
+                  'Date: ${DateFormat('dd-MMM-yyyy').format(DateTime.now())}',
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800),
+                ),
+                pw.Text(
+                  'OFFICIAL BUSINESS DOCUMENT',
+                  style: const pw.TextStyle(fontSize: 7.5, color: PdfColors.grey600),
+                ),
+              ],
+            ),
+          ],
         ),
+        pw.SizedBox(height: 12),
+        pw.Divider(thickness: 1, color: PdfColors.blue900),
         pw.SizedBox(height: 10),
-        pw.Divider(thickness: 2, color: PdfColors.blue900),
-        pw.SizedBox(height: 15),
       ],
     );
   }
@@ -134,13 +209,16 @@ class UnifiedPrintService {
     return pw.Column(
       children: [
         pw.Divider(thickness: 0.5, color: PdfColors.grey400),
-        pw.SizedBox(height: 10),
+        pw.SizedBox(height: 8),
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('Computer Generated Invoice', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
-            pw.Text('Thank you for choosing us!', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-            pw.Text('Date: ${DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now())}', style: const pw.TextStyle(fontSize: 8)),
+            pw.Text('Generated by Master Trailers System • Authorized Copy', 
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+            pw.Text('Thank you for your business!', 
+                style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+            pw.Text('Timestamp: ${DateFormat('dd-MMM-yyyy HH:mm').format(DateTime.now())}', 
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
           ],
         ),
       ],
@@ -184,77 +262,78 @@ class UnifiedPrintService {
         // Top decorative double hairline border
         pw.Container(
           width: double.infinity,
-          height: 1.5,
+          height: 1.2,
           color: PdfColors.black,
         ),
-        pw.SizedBox(height: 1.5),
+        pw.SizedBox(height: 1.2),
         pw.Container(
           width: double.infinity,
           height: 0.5,
           color: PdfColors.black,
         ),
-        pw.SizedBox(height: 5),
-
-        // Brand Emblem (Cropped pure monochrome linework)
-        pw.Center(
-          child: pw.Image(logo, width: 68, fit: pw.BoxFit.contain),
-        ),
         pw.SizedBox(height: 4),
+
+        // Brand Emblem (Cropped smooth anti-aliased linework)
+        pw.Center(
+          child: pw.Image(logo, width: 58, fit: pw.BoxFit.contain),
+        ),
+        pw.SizedBox(height: 3),
 
         // Company Title
         pw.Text(
           businessName,
           style: pw.TextStyle(
-            fontSize: 12.5,
+            fontSize: 11.5,
             fontWeight: pw.FontWeight.bold,
             letterSpacing: 0.6,
           ),
           textAlign: pw.TextAlign.center,
         ),
-        pw.SizedBox(height: 1.5),
+        pw.SizedBox(height: 1),
 
         // Industrial Subtitle
         pw.Text(
           subtitle ?? 'INDUSTRIAL FLEET & TRAILER MANUFACTURING',
           style: pw.TextStyle(
-            fontSize: 7.2,
+            fontSize: 6.8,
             fontWeight: pw.FontWeight.bold,
-            letterSpacing: 0.4,
+            letterSpacing: 0.3,
           ),
           textAlign: pw.TextAlign.center,
         ),
-        pw.SizedBox(height: 2),
+        pw.SizedBox(height: 1.5),
 
         // Address & Contacts
         pw.Text(
           address,
-          style: const pw.TextStyle(fontSize: 8),
+          style: const pw.TextStyle(fontSize: 7.5),
           textAlign: pw.TextAlign.center,
         ),
         pw.SizedBox(height: 1),
         pw.Text(
           'Tel: $phone',
-          style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+          style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold),
           textAlign: pw.TextAlign.center,
         ),
-        pw.SizedBox(height: 5),
+        pw.SizedBox(height: 4),
 
-        // Executive Inverted Document Title Banner
+        // Executive Framed Document Title Banner (Clean double horizontal borders, no heavy black ink block)
         pw.Container(
           width: double.infinity,
-          padding: const pw.EdgeInsets.symmetric(vertical: 3.5),
+          margin: const pw.EdgeInsets.symmetric(vertical: 2),
+          padding: const pw.EdgeInsets.symmetric(vertical: 3.5, horizontal: 4),
           decoration: const pw.BoxDecoration(
-            color: PdfColors.black,
-            borderRadius: pw.BorderRadius.all(pw.Radius.circular(2)),
+            border: pw.Border.symmetric(
+              horizontal: pw.BorderSide(color: PdfColors.black, width: 1.0),
+            ),
           ),
           child: pw.Column(
             children: [
               pw.Text(
                 title.toUpperCase(),
                 style: pw.TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 10,
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.white,
                   letterSpacing: 1.2,
                 ),
                 textAlign: pw.TextAlign.center,
@@ -266,8 +345,8 @@ class UnifiedPrintService {
                     docNumber,
                     style: pw.TextStyle(
                       fontSize: 8,
-                      fontWeight: pw.FontWeight.normal,
-                      color: PdfColors.white,
+                      fontWeight: pw.FontWeight.bold,
+                      letterSpacing: 0.6,
                     ),
                     textAlign: pw.TextAlign.center,
                   ),
@@ -275,7 +354,7 @@ class UnifiedPrintService {
             ],
           ),
         ),
-        pw.SizedBox(height: 6),
+        pw.SizedBox(height: 5),
       ],
     );
   }
