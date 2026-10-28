@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Traila ERP - Software Requirements Specification (SRS)</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 20mm 16mm 20mm 16mm;
+    @bottom-right {
+      content: "Page " counter(page);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 8pt;
+      color: #64748b;
+    }
+    @bottom-left {
+      content: "TRAILA ERP - SOFTWARE REQUIREMENTS SPECIFICATION";
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 8pt;
+      color: #64748b;
+      font-weight: 600;
+    }
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    color: #1e293b;
+    line-height: 1.55;
+    font-size: 9.5pt;
+    margin: 0;
+    padding: 0;
+  }
+
+  .cover-page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    page-break-after: always;
+    padding: 40px 20px 20px 20px;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+  }
+
+  .cover-header {
+    border-left: 6px solid #2563eb;
+    padding-left: 24px;
+    margin-top: 40px;
+  }
+
+  .cover-badge {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1e40af;
+    font-size: 10pt;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+
+  .cover-title {
+    font-size: 28pt;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+    margin: 0 0 12px 0;
+  }
+
+  .cover-subtitle {
+    font-size: 13pt;
+    color: #475569;
+    font-weight: 400;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .cover-meta {
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 24px;
+    margin: 40px 0;
+    border: 1px solid #cbd5e1;
+  }
+
+  .cover-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    font-size: 9.5pt;
+  }
+
+  .cover-meta-item strong {
+    color: #0f172a;
+    display: block;
+    margin-bottom: 2px;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .cover-footer {
+    border-top: 2px solid #e2e8f0;
+    padding-top: 16px;
+    font-size: 8.5pt;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  .avoid-break {
+    page-break-inside: avoid;
+  }
+
+  h1 {
+    font-size: 18pt;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 2.5px solid #2563eb;
+    padding-bottom: 6px;
+    margin-top: 24pt;
+    margin-bottom: 12pt;
+    page-break-before: always;
+    display: flex;
+    align-items: center;
+  }
+
+  h1:first-of-type {
+    page-break-before: avoid;
+  }
+
+  h2 {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1e3a8a;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 4px;
+    margin-top: 18pt;
+    margin-bottom: 8pt;
+  }
+
+  h3 {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 12pt;
+    margin-bottom: 4pt;
+  }
+
+  p {
+    margin: 0 0 8pt 0;
+    text-align: justify;
+  }
+
+  ul, ol {
+    margin: 0 0 8pt 0;
+    padding-left: 20px;
+  }
+
+  li {
+    margin-bottom: 3pt;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10pt 0 14pt 0;
+    font-size: 8.5pt;
+    background: #ffffff;
+  }
+
+  th {
+    background: #f1f5f9;
+    color: #0f172a;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    padding: 6px 8px;
+    text-align: left;
+  }
+
+  td {
+    border: 1px solid #cbd5e1;
+    padding: 5px 8px;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  code {
+    font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    background: #f1f5f9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 8pt;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+  }
+
+  pre {
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 8pt;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    overflow-x: auto;
+    margin: 8pt 0 12pt 0;
+    page-break-inside: avoid;
+    line-height: 1.45;
+  }
+
+  .alert-box {
+    background: #eff6ff;
+    border-left: 4px solid #2563eb;
+    padding: 10px 14px;
+    margin: 10pt 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 9pt;
+  }
+
+  .alert-box strong {
+    color: #1e40af;
+  }
+
+  .alert-box-warning {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    padding: 10px 14px;
+    margin: 10pt 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 9pt;
+  }
+
+  .alert-box-warning strong {
+    color: #b45309;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-purple { background: #f3e8ff; color: #6b21a8; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+
+  .diagram-box {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10pt 0;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 7.5pt;
+    line-height: 1.35;
+    page-break-inside: avoid;
+    white-space: pre;
+    color: #1e293b;
+    overflow-x: auto;
+  }
+
+  .formula-box {
+    background: #f8fafc;
+    border-left: 4px solid #059669;
+    border-top: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px 14px;
+    margin: 8pt 0;
+    border-radius: 0 6px 6px 0;
+    font-family: 'Cambria Math', 'Georgia', serif;
+    font-size: 10pt;
+    color: #064e3b;
+  }
+
+  .toc-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dotted #cbd5e1;
+    font-size: 9.5pt;
+  }
+  .toc-item strong {
+    color: #0f172a;
+  }
+  .toc-subitem {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0 2px 18px;
+    font-size: 8.5pt;
+    color: #475569;
+    border-bottom: 1px dotted #e2e8f0;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+  <div class="cover-header">
+    <div class="cover-badge">Formal Technical Document</div>
+    <div class="cover-title">SOFTWARE REQUIREMENTS SPECIFICATION (SRS)</div>
+    <div class="cover-subtitle">
+      Enterprise Manufacturing, Job-Costing, Procurement, Commercial Sales, and Dual-Entry Financial Accounting System
+    </div>
+  </div>
+
+  <div class="cover-meta">
+    <div class="cover-meta-grid">
+      <div class="cover-meta-item">
+        <strong>Software Product:</strong>
+        Traila ERP (Production Desktop Release)
+      </div>
+      <div class="cover-meta-item">
+        <strong>Document Version:</strong>
+        Version 1.0.0 (Master IEEE-830 Standard)
+      </div>
+      <div class="cover-meta-item">
+        <strong>Target Deployment:</strong>
+        Amjid Trailer Makers, Ring Road, Peshawar
+      </div>
+      <div class="cover-meta-item">
+        <strong>Platform Architecture:</strong>
+        Windows 10 / 11 Desktop (Offline-First Kiosk)
+      </div>
+      <div class="cover-meta-item">
+        <strong>Core Technology Stack:</strong>
+        Flutter SDK (Dart ^3.10.8), Drift SQLite ORM v11
+      </div>
+      <div class="cover-meta-item">
+        <strong>State Management:</strong>
+        Unidirectional Flutter BLoC (ERPCubit)
+      </div>
+      <div class="cover-meta-item">
+        <strong>Printing Subsystem:</strong>
+        Dual-Engine: 58mm/80mm Thermal POS & A4 Spooler
+      </div>
+      <div class="cover-meta-item">
+        <strong>Document Dispatch:</strong>
+        Integrated Shell & WhatsApp Automation
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <div><strong>Prepared by:</strong> Senior Systems Engineering & Enterprise Architecture Team</div>
+    <div><strong>Status:</strong> Approved Production Baseline</div>
+    <div><strong>Date:</strong> October 2026</div>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="page-break"></div>
+<h2>TABLE OF CONTENTS</h2>
+<div style="margin-top: 14pt;">
+  <div class="toc-item"><strong>1. INTRODUCTION</strong> <span>Page 3</span></div>
+  <div class="toc-subitem">1.1 Purpose of the Document <span>3</span></div>
+  <div class="toc-subitem">1.2 Scope of the Software System <span>3</span></div>
+  <div class="toc-subitem">1.3 Intended Audience & Reading Suggestions <span>3</span></div>
+  <div class="toc-subitem">1.4 Document Conventions & Design Standards <span>4</span></div>
+  <div class="toc-subitem">1.5 References & Industry Guidelines <span>4</span></div>
+
+  <div class="toc-item" style="margin-top: 6pt;"><strong>2. OVERALL DESCRIPTION</strong> <span>Page 4</span></div>
+  <div class="toc-subitem">2.1 Product Perspective & Architectural Topology <span>4</span></div>
+  <div class="toc-subitem">2.2 System Modules Decomposition <span>5</span></div>
+  <div class="toc-subitem">2.3 User Classes & Operating Personas <span>5</span></div>
+  <div class="toc-subitem">2.4 Operating Environment & Platform Constraints <span>6</span></div>
+  <div class="toc-subitem">2.5 Design & Implementation Constraints <span>6</span></div>
+  <div class="toc-subitem">2.6 Assumptions & Dependencies <span>6</span></div>
+
+  <div class="toc-item" style="margin-top: 6pt;"><strong>3. EXTERNAL INTERFACE REQUIREMENTS</strong> <span>Page 7</span></div>
+  <div class="toc-subitem">3.1 User Interfaces & Visual Design System <span>7</span></div>
+  <div class="toc-subitem">3.2 Hardware Interfaces: Thermal POS & Laser Printers <span>7</span></div>
+  <div class="toc-subitem">3.3 Software Interfaces: Windows Desktop & File System <span>8</span></div>
+  <div class="toc-subitem">3.4 Communication Interfaces: WhatsApp Desktop Protocol <span>8</span></div>
+
+  <div class="toc-item" style="margin-top: 6pt;"><strong>4. SYSTEM FEATURES & FUNCTIONAL REQUIREMENTS</strong> <span>Page 9</span></div>
+  <div class="toc-subitem">4.1 Module 01: Application Lifecycle & Kiosk Window Control <span>9</span></div>
+  <div class="toc-subitem">4.2 Module 02: Drift Database Subsystem & Self-Healing Engine <span>9</span></div>
+  <div class="toc-subitem">4.3 Module 03: Executive Dashboard & Workshop Fleet Metrics <span>10</span></div>
+  <div class="toc-subitem">4.4 Module 04: Traila Production & Fleet Management <span>10</span></div>
+  <div class="toc-subitem">4.5 Module 05: Manufacturing Cost & Job-Costing Engine <span>11</span></div>
+  <div class="toc-subitem">4.6 Module 06: Supplier Procurement & Materials Registry <span>11</span></div>
+  <div class="toc-subitem">4.7 Module 07: Supplier Financial Ledger & Dual-Balance Settlements <span>12</span></div>
+  <div class="toc-subitem">4.8 Module 08: Labour Workforce & Piece-Rate Job Work <span>13</span></div>
+  <div class="toc-subitem">4.9 Module 09: Labour Financial Ledger & Wage Disbursements <span>13</span></div>
+  <div class="toc-subitem">4.10 Module 10: Finished Unit Sales & Commercial Contracts <span>14</span></div>
+  <div class="toc-subitem">4.11 Module 11: Sale Installments & Buyer Global Debt Consolidation <span>14</span></div>
+  <div class="toc-subitem">4.12 Module 12: Khata (Customer & Personal Credit Ledger) <span>15</span></div>
+  <div class="toc-subitem">4.13 Module 13: Cash Flow, Multi-Wallet Treasury & Transfers <span>16</span></div>
+  <div class="toc-subitem">4.14 Module 14: Profit & Loss (P&L) Financial Engine <span>16</span></div>
+  <div class="toc-subitem">4.15 Module 15: Document Generation & PDF Typography Engine <span>17</span></div>
+  <div class="toc-subitem">4.16 Module 16: Hardware Printing & Image Thresholding Subsystem <span>17</span></div>
+  <div class="toc-subitem">4.17 Module 17: External WhatsApp Automation & Customer Dispatch <span>18</span></div>
+  <div class="toc-subitem">4.18 Module 18: Workshop Branding & Application Profile Settings <span>18</span></div>
+
+  <div class="toc-item" style="margin-top: 6pt;"><strong>5. NON-FUNCTIONAL REQUIREMENTS</strong> <span>Page 19</span></div>
+  <div class="toc-subitem">5.1 Performance Requirements <span>19</span></div>
+  <div class="toc-subitem">5.2 Reliability & Fault Tolerance <span>19</span></div>
+  <div class="toc-subitem">5.3 Data Integrity & Constraints <span>19</span></div>
+  <div class="toc-subitem">5.4 Usability & Human Factors <span>20</span></div>
+
+  <div class="toc-item" style="margin-top: 6pt;"><strong>6. DATA MODELS & RELATIONAL DATABASE SPECIFICATIONS</strong> <span>Page 20</span></div>
+  <div class="toc-subitem">6.1 Entity-Relationship Overview <span>20</span></div>
+  <div class="toc-subitem">6.2 Complete Table Data Dictionary (18 Tables) <span>21</span></div>
+
+  <div class="toc-item" style="margin-top: 6pt;"><strong>7. MATHEMATICAL FORMULATIONS & CORE ALGORITHMS</strong> <span>Page 24</span></div>
+  <div class="toc-subitem">7.1 Traila Manufacturing Cost Aggregation <span>24</span></div>
+  <div class="toc-subitem">7.2 Supplier Dual-Balance Settlement Logic <span>24</span></div>
+  <div class="toc-subitem">7.3 Double-Entry Inter-Account Fund Transfer <span>25</span></div>
+  <div class="toc-subitem">7.4 Khata Bidirectional Synchronization Logic <span>25</span></div>
+  <div class="toc-subitem">7.5 Monochrome Thermal Image Luminance Thresholding <span>25</span></div>
+
+  <div class="toc-item" style="margin-top: 6pt;"><strong>8. END-TO-END OPERATIONAL USE CASES</strong> <span>Page 26</span></div>
+  <div class="toc-subitem">8.1 Use Case UC-01: Traila Manufacturing & Customer Sale <span>26</span></div>
+  <div class="toc-subitem">8.2 Use Case UC-02: Supplier Material Procurement with Partial Payout <span>27</span></div>
+
+  <div class="toc-item" style="margin-top: 6pt;"><strong>9. REQUIREMENTS TRACEABILITY MATRIX & CODE MAP</strong> <span>Page 28</span></div>
+  <div class="toc-item" style="margin-top: 6pt;"><strong>10. GLOSSARY & DOMAIN TERMINOLOGY</strong> <span>Page 29</span></div>
+</div>
+
+<!-- SECTION 1: INTRODUCTION -->
+<h1>1. INTRODUCTION</h1>
+
+<h2>1.1 Purpose of the Document</h2>
+<p>
+This Software Requirements Specification (SRS) document provides a formal, comprehensive, and exhaustive specification of the software requirements for the <strong>Traila ERP</strong> application. It defines the functional behaviors, system architecture, database specifications, financial calculation models, hardware communication protocols, and non-functional engineering standards governing the system from initial boot to application teardown.
+</p>
+
+<h2>1.2 Scope of the Software System</h2>
+<p>
+<strong>Traila ERP</strong> is a purpose-built, offline-first Enterprise Resource Planning and Accounting System engineered specifically for heavy trailer/trolley manufacturers, agricultural vehicle fabricators, and body-maker commission workshops. The application automates the entire manufacturing, procurement, commercial sales, and financial management cycle, as deployed at <em>Amjid Trailer Makers, Main Hazar Khwani Ring Road, Peshawar</em>.
+</p>
+<div class="alert-box">
+  <strong>Key Operational Capabilities:</strong>
+  Traila ERP integrates serial-tracked vehicle fabrication tracking, precise piece-rate and raw material job-costing, supplier dual-balance (Payable vs Advance) ledgers, labour wage ledgers, commercial sales contracts with profit auditing, personal Khata (Udhaar Bahi) credit tracking, multi-wallet treasury cash-flow, 58mm/80mm thermal receipt and A4 PDF printing, and native Windows WhatsApp dispatch automation.
+</div>
+
+<h2>1.3 Intended Audience & Reading Suggestions</h2>
+<ul>
+  <li><strong>Software Engineers & Maintainers:</strong> Consult Section 3 (System Architecture), Section 4 (Functional Requirements), Section 6 (Database Specifications), and Section 9 (Requirements Traceability Matrix) for implementation details.</li>
+  <li><strong>Workshop Managers & Business Administrators:</strong> Review Section 2 (Overall Description), Section 4 (Modules 3-14), and Section 8 (Operational Use Cases) to understand operational workflows.</li>
+  <li><strong>Quality Assurance & Financial Auditors:</strong> Reference Section 5 (Non-Functional Requirements) and Section 7 (Mathematical Formulations & Core Algorithms) for ledger reconciliation guarantees.</li>
+</ul>
+
+<h2>1.4 Document Conventions & Design Standards</h2>
+<p>
+Requirements are tagged with unique alphanumeric identifiers in the format <code>REQ-[Module]-[Number]</code> for functional requirements and <code>NFR-[Category]-[Number]</code> for non-functional requirements. Mathematical formulas are stated using standard arithmetic formulations and pseudo-code implementations.
+</p>
+
+<h2>1.5 References & Industry Guidelines</h2>
+<ul>
+  <li><strong>IEEE Std 830-1998:</strong> Recommended Practice for Software Requirements Specifications.</li>
+  <li><strong>ISO/IEC/IEEE 29148:2018:</strong> Systems and Software Engineering — Requirements Engineering.</li>
+  <li><strong>SQLite 3 Specifications:</strong> Relational engine specifications with PRAGMA foreign keys and ACID transactions.</li>
+  <li><strong>Flutter & Drift ORM Documentation:</strong> Reactive application architecture and type-safe database migrations.</li>
+</ul>
+
+<!-- SECTION 2: OVERALL DESCRIPTION -->
+<h1>2. OVERALL DESCRIPTION</h1>
+
+<h2>2.1 Product Perspective & Architectural Topology</h2>
+<p>
+Traila ERP operates as a standalone, zero-cloud-dependent native 64-bit Windows desktop software application. It utilizes a unidirectional reactive state architecture orchestrated via <strong>Flutter BLoC (<code>ERPCubit</code>)</strong>, backed by an embedded SQLite database managed through <strong>Drift ORM</strong>.
+</p>
+
+<div class="diagram-box">
++-----------------------------------------------------------------------------------+
+|                        FLUTTER DESKTOP PRESENTATION LAYER                         |
+|   (Kiosk Mode Shell, Top Header with Instant Search, Animated Collapsible Sidebar)  |
++-----------------------------------------------------------------------------------+
+                                   |           ^
+                    Dispatch Event |           | Emits Immutable State
+                                   v           |
++-----------------------------------------------------------------------------------+
+|                     STATE MANAGEMENT ENGINE: ERPCubit / ERPState                  |
+|    - In-Memory Balance Calculations    - State Transition Validation              |
+|    - Business Rules Enforcement        - Reactive Event Notifications             |
++-----------------------------------------------------------------------------------+
+             |                                    |                        |
+             | Relational DB Operations           | Generate Vector PDF    | Print Bitmap
+             v                                    v                        v
++------------------------+      +---------------------------+   +-------------------+
+|      DRIFT SQLITE      |      |     INVOICE PDF ENGINE    |   |  THERMAL PRINTER  |
+|  (Schema v11, WAL, FK) |      | (A4 Sheet & 58/80mm POS)  |   |  (Monochrome Luma)|
++------------------------+      +---------------------------+   +-------------------+
+             |                                    |                        |
+             v                                    v                        v
++------------------------+      +---------------------------+   +-------------------+
+| AppData/Roaming/       |      | %USERPROFILE%/Documents/  |   | Windows Print     |
+| traila.db File Store   |      | Traila/Invoices Archive   |   | Spooler Pipeline  |
++------------------------+      +---------------------------+   +-------------------+
+</div>
+
+<h2>2.2 System Modules Decomposition</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 12%;">Module ID</th>
+      <th style="width: 25%;">Module Name</th>
+      <th style="width: 33%;">Implementation File</th>
+      <th style="width: 30%;">Operational Scope</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>MOD-01</strong></td><td>Application Shell & Kiosk Window</td><td><code>main.dart</code>, <code>layout.dart</code></td><td>Borderless kiosk window, collapsible sidebar, search header.</td></tr>
+    <tr><td><strong>MOD-02</strong></td><td>Drift Relational Storage & Healing</td><td><code>database.dart</code></td><td>SQLite v11 engine, PRAGMA foreign keys, self-healing.</td></tr>
+    <tr><td><strong>MOD-03</strong></td><td>Executive Dashboard & KPIs</td><td><code>dashboard_screen.dart</code></td><td>Fleet status summary, liquidity rollup, counter-party tallies.</td></tr>
+    <tr><td><strong>MOD-04</strong></td><td>Traila Unit Production Lifecycle</td><td><code>traila_register_screen.dart</code></td><td>Chassis registration, assembly state transitions (pending/ready/sold).</td></tr>
+    <tr><td><strong>MOD-05</strong></td><td>Manufacturing Cost Engine</td><td><code>traila_history_screen.dart</code></td><td>Job-costing roll-up: procurement materials + labour work + overheads.</td></tr>
+    <tr><td><strong>MOD-06</strong></td><td>Supplier Procurement Registry</td><td><code>supplier_management_screen.dart</code></td><td>Supplier catalog, multi-item purchase bills, unit cost injection.</td></tr>
+    <tr><td><strong>MOD-07</strong></td><td>Supplier Ledger & Settlements</td><td><code>supplier_profile_screen.dart</code></td><td>Dual-balance debt/advance engine, split payments, print statements.</td></tr>
+    <tr><td><strong>MOD-08</strong></td><td>Labour Workforce & Work Orders</td><td><code>labour_management_screen.dart</code></td><td>Worker directory, task logging, automatic unit cost linkage.</td></tr>
+    <tr><td><strong>MOD-09</strong></td><td>Labour Ledger & Wage Settlements</td><td><code>labour_profile_screen.dart</code></td><td>Wage vouchers, wallet deductions, balance reconciliation.</td></tr>
+    <tr><td><strong>MOD-10</strong></td><td>Commercial Sales & Unit Handoff</td><td><code>sales_management_screen.dart</code></td><td>Sale execution, profit computation, CNIC capture, downpayment.</td></tr>
+    <tr><td><strong>MOD-11</strong></td><td>Sale Installments & Debt Aging</td><td><code>sale_detail_screen.dart</code></td><td>Periodic installment collection, consolidated buyer debt tracking.</td></tr>
+    <tr><td><strong>MOD-12</strong></td><td>Khata Credit Ledger (Udhaar Bahi)</td><td><code>khata_management_screen.dart</code></td><td>Informal counter-party ledger, optional cash wallet sync.</td></tr>
+    <tr><td><strong>MOD-13</strong></td><td>Multi-Wallet Treasury & Transfers</td><td><code>cash_flow_screen.dart</code></td><td>Wallet management, atomic double-entry money transfers.</td></tr>
+    <tr><td><strong>MOD-14</strong></td><td>P&L Financial Engine & Reporting</td><td><code>expense_revenue_screen.dart</code></td><td>Temporal filtering (Monthly/Yearly/Custom), revenue vs expense.</td></tr>
+    <tr><td><strong>MOD-15</strong></td><td>Document Generation & Typography</td><td><code>invoice_pdf_service.dart</code></td><td>18 distinct vector PDF document layouts (A4 and 58/80mm roll).</td></tr>
+    <tr><td><strong>MOD-16</strong></td><td>Hardware Printing Subsystem</td><td><code>thermal_printer_service.dart</code></td><td>Monochrome luminance thresholding for 203 DPI thermal heads.</td></tr>
+    <tr><td><strong>MOD-17</strong></td><td>WhatsApp & Shell Automation</td><td><code>whatsapp_service.dart</code></td><td>PDF disk caching, URI launch (<code>whatsapp://</code>), Explorer highlight.</td></tr>
+    <tr><td><strong>MOD-18</strong></td><td>Workshop Branding & Profile</td><td><code>app_profile_screen.dart</code></td><td>Business branding metadata, owner contacts, printer page defaults.</td></tr>
+  </tbody>
+</table>
+
+<h2>2.3 User Classes & Operating Personas</h2>
+<ul>
+  <li><strong>Workshop General Manager:</strong> Oversees trailer manufacturing progress, sets sale contracts, views executive profit margins, and manages workshop profile settings.</li>
+  <li><strong>Workshop Accountant / Cashier:</strong> Records material purchase bills, logs labour piece-rate entries, collects customer installment payments, manages cash/bank wallets, and prints receipts.</li>
+  <li><strong>Storekeeper / Procurement Supervisor:</strong> Manages raw material inventory bills (steel sheets, axles, leaf springs) and links material costs to trailer IDs.</li>
+</ul>
+
+<h2>2.4 Operating Environment & Platform Constraints</h2>
+<ul>
+  <li><strong>Operating System:</strong> Microsoft Windows 10 (Build 19041+) and Windows 11 64-bit.</li>
+  <li><strong>Hardware Footprint:</strong> Minimal hardware footprint requiring x86_64 CPU (2.0 GHz+), 4 GB RAM, 500 MB free disk space.</li>
+  <li><strong>Database Storage:</strong> Stored locally at <code>%APPDATA%Roaming&lt;app-id&gt;	raila.db</code>.</li>
+  <li><strong>Invoice Archive:</strong> Automated file export to <code>%USERPROFILE%DocumentsTrailaInvoices</code>.</li>
+</ul>
+
+<!-- SECTION 3: EXTERNAL INTERFACE REQUIREMENTS -->
+<h1>3. EXTERNAL INTERFACE REQUIREMENTS</h1>
+
+<h2>3.1 User Interfaces & Visual Design System</h2>
+<p>
+The application shell executes in <strong>Kiosk Mode</strong> (borderless, title bar controls removed, centered and auto-maximized to full display bounds).
+</p>
+<ul>
+  <li><strong>Layout Structure:</strong> Responsive horizontal split featuring a collapsible dark slate navigation sidebar (<code>260px</code> expanded, <code>80px</code> collapsed, background <code>#1E293B</code>) and a light content canvas (background <code>#F8FAFC</code>).</li>
+  <li><strong>Ergonomic Spacing:</strong> Standard <code>29px</code> (approx. 0.3-inch) separation between navigation and active module views.</li>
+  <li><strong>Header Bar:</strong> Fixed <code>70px</code> header housing a <code>300px</code> search text field that instantly updates <code>ERPState.searchQuery</code>, dynamically filtering tables and lists without reload buttons.</li>
+  <li><strong>Color Palette:</strong> Primary seed <code>#2563EB</code> (Royal Blue), background <code>#FFFFFF</code>, cards border <code>#E2E8F0</code> with <code>12px</code> rounded corners.</li>
+  <li><strong>Typography:</strong> Google Fonts <code>Inter</code> applied globally across all UI widgets.</li>
+</ul>
+
+<h2>3.2 Hardware Interfaces: Thermal POS & Office Printers</h2>
+<ul>
+  <li><strong>Thermal Point-of-Sale (POS) Printers:</strong> Native spooling to 58mm (width <code>164 pt</code>) and 80mm (width <code>226 pt</code>) ESC/POS-compatible continuous receipt printers.</li>
+  <li><strong>Office Laser / Inkjet Printers:</strong> Native spooling to standard A4 paper format (210mm x 297mm) via the Windows Print Spooler.</li>
+  <li><strong>Luminance Thresholding:</strong> High-resolution color logos are dynamically downscaled to <code>300px</code> width, converted to 8-bit grayscale, and thresholded ($L > 0.6 implies 255$, else $0$) to eliminate thermal print head ink-bleed.</li>
+</ul>
+
+<h2>3.3 Software Interfaces: Windows Desktop & Shell</h2>
+<ul>
+  <li><strong>Window Management:</strong> Managed via <code>window_manager</code> for borderless kiosk execution.</li>
+  <li><strong>File System Access:</strong> <code>path_provider</code> maps persistent database storage to application support paths.</li>
+  <li><strong>Shell Spooling:</strong> Direct process execution via <code>Process.run('explorer.exe', ['/select,', filePath])</code> to bring the file manager to the foreground with the active invoice highlighted.</li>
+</ul>
+
+<h2>3.4 Communication Interfaces: WhatsApp Desktop Protocol</h2>
+<p>
+The application automates document delivery via WhatsApp without external paid APIs:
+</p>
+<ol>
+  <li>The vector PDF is generated and serialized to <code>%USERPROFILE%DocumentsTrailaInvoices&lt;filename&gt;.pdf</code>.</li>
+  <li>The telephone number is sanitized and converted to international E.164 format (Pakistani numbers starting with <code>03...</code> or 10 digits are prepended with country code <code>92</code>).</li>
+  <li>The application executes <code>cmd.exe /c start whatsapp://send?phone=&lt;sanitizedNumber&gt;</code>, opening WhatsApp Desktop to the client chat.</li>
+  <li>Simultaneously, Windows Explorer opens with the generated PDF selected for immediate drag-and-drop into the chat window.</li>
+</ol>
+
+<!-- SECTION 4: SYSTEM FEATURES & FUNCTIONAL REQUIREMENTS -->
+<h1>4. SYSTEM FEATURES & FUNCTIONAL REQUIREMENTS</h1>
+
+<h2>4.1 Module 01: Application Lifecycle & Kiosk Window Control</h2>
+<ul>
+  <li><strong>REQ-01-01:</strong> The application shall initialize the <code>window_manager</code> plugin on launch, strip all standard OS window decorations, center the window, and maximize it into kiosk mode.</li>
+  <li><strong>REQ-01-02:</strong> The sidebar menu shall provide an <code>Exit App</code> action that invokes <code>windowManager.close()</code> to terminate the application cleanly.</li>
+  <li><strong>REQ-01-03:</strong> The main shell shall manage page transitions via an unscrollable <code>PageView</code> controlled by <code>currentModuleIndex</code> with smooth curve animations (<code>300ms</code> duration).</li>
+</ul>
+
+<h2>4.2 Module 02: Drift Relational Storage & Self-Healing Engine</h2>
+<ul>
+  <li><strong>REQ-02-01:</strong> The database shall execute under schema version <code>11</code> with foreign key enforcement active (<code>PRAGMA foreign_keys = ON</code>).</li>
+  <li><strong>REQ-02-02 (Self-Healing Balances):</strong> During <code>loadData()</code>, if any supplier or labourer record has <code>remainingBalance == 0</code>, <code>openingBalance > 0</code>, and zero prior transactions, the system shall automatically repair the database by setting <code>remainingBalance = openingBalance</code>.</li>
+  <li><strong>REQ-02-03 (Legacy Invoice Backfill):</strong> The system shall scan legacy records and generate backfilled <code>OPEN-BAL</code> invoices for any entity possessing an opening balance lacking an invoice voucher.</li>
+  <li><strong>REQ-02-04 (Legacy Sales Downpayment Backfill):</strong> The system shall inspect historical sales where <code>paidAmount > 0</code> lacking downpayment vouchers, automatically generating synthetic records (<code>DP-&lt;saleId&gt;-BACKFILL</code>) in the payments ledger.</li>
+</ul>
+
+<h2>4.3 Module 03: Executive Dashboard & Workshop Fleet Metrics</h2>
+<ul>
+  <li><strong>REQ-03-01:</strong> The dashboard shall calculate and render live counts of manufactured trailers categorized into three mutually exclusive states: <code>Pending Trailers</code>, <code>Ready Trailers</code>, and <code>Sold Trailers</code>.</li>
+  <li><strong>REQ-03-02:</strong> The dashboard shall calculate aggregate available cash across all registered accounts: $	ext{Total Balance} = sum 	ext{AccountBalance}_i$.</li>
+  <li><strong>REQ-03-03:</strong> Active counter-party summaries shall display the total count of registered suppliers and total workshop labour workforce.</li>
+  <li><strong>REQ-03-04:</strong> Quick action buttons shall enable single-click navigation to Traila Register (Index 1), Procurement (Index 2), Labour Work (Index 3), and Sales (Index 4).</li>
+</ul>
+
+<h2>4.4 Module 04: Traila Production & Fleet Management</h2>
+<ul>
+  <li><strong>REQ-04-01:</strong> The system shall support registering new trailer units with a mandatory manual identifier (e.g., <code>T1</code>, <code>T-102</code>) and Model Name.</li>
+  <li><strong>REQ-04-02:</strong> Newly created trailers shall automatically be assigned status <code>TrailaStatus.pending</code> with initial <code>totalManufacturingCost = 0.0</code>.</li>
+  <li><strong>REQ-04-03:</strong> The system shall support modifying trailer metadata (ID, Model Name, Registration Date).</li>
+  <li><strong>REQ-04-04:</strong> The system shall allow transitioning trailer status between <code>pending</code> (under construction), <code>ready</code> (available for commercial sale), and <code>sold</code>.</li>
+  <li><strong>REQ-04-05:</strong> Deletion of a trailer unit shall cascade delete all associated expenses, preventing orphan records.</li>
+</ul>
+
+<h2>4.5 Module 05: Manufacturing Cost & Job-Costing Engine</h2>
+<ul>
+  <li><strong>REQ-05-01:</strong> The Unit Manufacturing Cost ($C_{	ext{Traila}}$) shall be calculated dynamically as:
+    $$C_{	ext{Traila}} = sum M_{	ext{Materials}} + sum W_{	ext{Labour}} + sum E_{	ext{Overhead}}$$
+  </li>
+  <li><strong>REQ-05-02:</strong> Any procurement bill or labour entry linked to a trailer ID shall trigger <code>_syncTrailaTotalCost(trailaId)</code>, updating the persisted cost in the <code>Trailas</code> table.</li>
+  <li><strong>REQ-05-03:</strong> Manual overhead expenses (e.g., permits, specialized transport) can be added directly to any trailer unit via the Traila History interface.</li>
+</ul>
+
+<h2>4.6 Module 06: Supplier Procurement & Materials Registry</h2>
+<ul>
+  <li><strong>REQ-06-01:</strong> The system shall maintain a supplier directory capturing Manual ID, Name, Phone Number, Shop Name, Market Location, Address, WhatsApp Number, and Initial Opening Balance.</li>
+  <li><strong>REQ-06-02:</strong> Purchase bills shall capture: Bill Number (auto-generated <code>INV-SP-XXXX</code> if blank), Bill Date, Target Traila ID (optional), Multi-item lines (Name, Quantity, Unit Price, Total), Upfront Payment Amount, and Source Account.</li>
+  <li><strong>REQ-06-03:</strong> Line total and bill total shall compute as: $	ext{LineTotal} = 	ext{Qty} 	imes 	ext{UnitPrice}$, $	ext{BillTotal} = sum 	ext{LineTotal}_i$.</li>
+</ul>
+
+<h2>4.7 Module 07: Supplier Financial Ledger & Dual-Balance Settlements</h2>
+<ul>
+  <li><strong>REQ-07-01 (Dual-Balance Logic):</strong> Supplier net balance evaluates according to:
+    $$	ext{Net} = 	ext{OpeningBalance} + sum 	ext{Purchases} - sum 	ext{Payments}$$
+    If $	ext{Net} ge 0 implies 	ext{RemainingBalance} = 	ext{Net}$ (Payable debt owed to supplier).<br>
+    If $	ext{Net} < 0 implies 	ext{AdvanceBalance} = |	ext{Net}|$ (Advance credit balance held by supplier).
+  </li>
+  <li><strong>REQ-07-02 (Snapshot Integrity):</strong> Invoice generation shall snapshot the pre-transaction balance from the database and store it directly in <code>invoices.previousBalance</code>.</li>
+  <li><strong>REQ-07-03 (Split Payments):</strong> The system shall support split-disbursements across multiple accounts simultaneously (e.g., Rs. 50,000 Cash + Rs. 150,000 Bank).</li>
+  <li><strong>REQ-07-04:</strong> Every supplier payment disbursement shall post a debit transaction (<code>type: take</code>) to the designated financial wallet.</li>
+</ul>
+
+<h2>4.8 Module 08: Labour Workforce & Piece-Rate Job Work</h2>
+<ul>
+  <li><strong>REQ-08-01:</strong> The system shall maintain a labour workforce directory recording Worker ID, Name, Phone, WhatsApp, Home Address, and Opening Balance.</li>
+  <li><strong>REQ-08-02:</strong> Work orders shall capture: Entry Number (auto-generated <code>INV-LW-XXXX</code> if blank), Target Traila ID, Task Description (e.g., "Chassis welding", "Double axle fitting"), Piece-rate Charge, and optional Upfront Wage Payment.</li>
+  <li><strong>REQ-08-03:</strong> Upfront payments logged during work order entry shall automatically generate a linked payment voucher (<code>LPAY-...</code>), debit the chosen wallet, and adjust the worker's balance.</li>
+</ul>
+
+<h2>4.9 Module 09: Labour Financial Ledger & Wage Disbursements</h2>
+<ul>
+  <li><strong>REQ-09-01:</strong> Worker payable wage balance evaluates according to:
+    $$	ext{Wage Due} = 	ext{OpeningBalance} + sum 	ext{Work Charges} - sum 	ext{Wages Paid}$$
+  </li>
+  <li><strong>REQ-09-02:</strong> Wage disbursement vouchers shall generate sequential receipt numbers (<code>INV-L-PAY-XXXXX</code>).</li>
+  <li><strong>REQ-09-03:</strong> Deleting or modifying a wage payment shall execute <code>_syncLabourBalances(labourId)</code> to recalculate running balances.</li>
+</ul>
+
+<h2>4.10 Module 10: Finished Unit Sales & Commercial Contracts</h2>
+<ul>
+  <li><strong>REQ-10-01:</strong> Only trailer units possessing status <code>TrailaStatus.ready</code> shall be eligible for commercial sale.</li>
+  <li><strong>REQ-10-02:</strong> Sale contract creation shall capture: Ready Unit Selection, Buyer Profiling (Name, Phone, CNIC, Address, WhatsApp), Agreed Sale Price ($P_{	ext{Sale}}$), Initial Downpayment, Target Wallet, and Sale Date.</li>
+  <li><strong>REQ-10-03 (Internal Profit Engine):</strong> The system shall compute gross operational unit profit:
+    $$	ext{Profit} = P_{	ext{Sale}} - C_{	ext{Manufacturing}}$$
+    This figure is strictly retained for management auditing and shielded from customer documents.
+  </li>
+  <li><strong>REQ-10-04:</strong> Contract execution shall update the trailer's status in <code>Trailas</code> to <code>'sold'</code> and store <code>salePrice</code>.</li>
+  <li><strong>REQ-10-05:</strong> Sales shall generate unique commercial sequence receipts formatted as <code>SALE-XXXXX</code>.</li>
+</ul>
+
+<h2>4.11 Module 11: Sale Installments & Buyer Global Debt Consolidation</h2>
+<ul>
+  <li><strong>REQ-11-01 (Consolidated Debt Tracking):</strong> When generating a sale invoice or installment receipt, the system shall aggregate all unpaid debts from all other trailers purchased by the same buyer:
+    $$	ext{Global Previous Debt} = sum_{s in 	ext{Sales}_{	ext{Buyer}} setminus {s_{	ext{current}}}} 	ext{RemainingBalance}(s)$$
+    $$	ext{Gross Total Due} = P_{	ext{Sale}} + 	ext{Global Previous Debt}$$
+  </li>
+  <li><strong>REQ-11-02:</strong> Subsequent installment payments shall be tracked in the payments ledger, updating remaining debt and posting an incoming cash transaction (<code>type: add</code>).</li>
+  <li><strong>REQ-11-03:</strong> Sales Management shall provide segregated views: <code>Ready for Sale</code>, <code>Partial / Pending</code>, and <code>Fully Paid</code>.</li>
+</ul>
+
+<h2>4.12 Module 12: Khata (Customer & Personal Credit Ledger)</h2>
+<ul>
+  <li><strong>REQ-12-01:</strong> The system shall provide an independent Khata subsystem for tracking general counter-party credits, advances, and customer accounts (Udhaar Bahi).</li>
+  <li><strong>REQ-12-02:</strong> Transactions shall be categorized as <code>KhataTransactionType.cashOut</code> (debit, increases debt owed to business) or <code>KhataTransactionType.cashIn</code> (credit, decreases debt).</li>
+  <li><strong>REQ-12-03 (Account Sync Toggle):</strong> Each transaction features a <code>syncToAccount</code> flag:
+    - If enabled: Debits or credits the designated commercial account wallet concurrently.<br>
+    - If disabled: Updates the personal ledger without altering physical cash balances.
+  </li>
+  <li><strong>REQ-12-04:</strong> Khata running balance calculates as: $	ext{Balance} = 	ext{Opening} + sum 	ext{CashOut} - sum 	ext{CashIn}$.</li>
+</ul>
+
+<h2>4.13 Module 13: Cash Flow, Multi-Wallet Treasury & Transfers</h2>
+<ul>
+  <li><strong>REQ-13-01:</strong> The system shall support creating multiple commercial liquidity wallets (e.g., <code>Cash In Hand</code>, <code>Meezan Bank</code>, <code>HBL</code>, <code>EasyPaisa</code>).</li>
+  <li><strong>REQ-13-02:</strong> Inter-account fund transfers shall execute as an atomic transaction creating two linked entries:
+    1. A debit entry on source account (<code>type: transfer</code>, <code>id: TRF-...-OUT</code>).<br>
+    2. A credit entry on destination account (<code>type: transfer</code>, <code>id: TRF-...-IN</code>).<br>
+    3. Both entries share an identical <code>linkedTransferId</code>.
+  </li>
+  <li><strong>REQ-13-03:</strong> Modifying or deleting a transfer transaction shall automatically reconcile the reciprocal twin entry.</li>
+</ul>
+
+<h2>4.14 Module 14: Profit & Loss (P&L) Financial Engine</h2>
+<ul>
+  <li><strong>REQ-14-01:</strong> The P&L engine shall filter financial metrics across temporal boundaries: <code>All Time</code>, <code>Monthly</code>, <code>Yearly</code>, and <code>Custom Date Range</code>.</li>
+  <li><strong>REQ-14-02:</strong> Financial engine metrics evaluation:
+    $$	ext{Total Revenue} = sum_{s in 	ext{Sales} cap 	ext{Range}} s.	ext{salePrice}$$
+    $$	ext{Total Expenses} = sum_{t in 	ext{Trailas} cap 	ext{Range}} t.	ext{totalManufacturingCost}$$
+    $$	ext{Net Operating Profit} = 	ext{Total Revenue} - 	ext{Total Expenses}$$
+  </li>
+</ul>
+
+<h2>4.15 Module 15: Document Generation & PDF Typography Engine</h2>
+<ul>
+  <li><strong>REQ-15-01:</strong> The system shall provide vector PDF document generation (via <code>InvoicePdfService</code>) for 18 distinct document types:
+    <ol>
+      <li><code>generateSupplierPurchasePdf</code> (A4 Purchase Bill)</li>
+      <li><code>generateSupplierPaymentPdf</code> (A4 Supplier Payment Voucher)</li>
+      <li><code>generateLabourWorkPdf</code> (A4 Labour Work Order)</li>
+      <li><code>generateLabourPaymentPdf</code> (A4 Labour Wage Voucher)</li>
+      <li><code>generateSalePdf</code> (A4 Commercial Vehicle Sale Invoice)</li>
+      <li><code>generateStatementPdf</code> (A4 Running Ledger Statement)</li>
+      <li><code>generateKhataPdf</code> (A4 Khata Customer Statement)</li>
+      <li><code>generateFinancialReportPdf</code> (A4 P&L and Balance Summary)</li>
+      <li><code>generateCashFlowReportPdf</code> (A4 Treasury & Wallet Audit)</li>
+      <li><code>generateThermalSalePdf</code> (58/80mm Sale Receipt)</li>
+      <li><code>generateThermalPurchasePdf</code> (58/80mm Purchase Slip)</li>
+      <li><code>generateThermalPaymentPdf</code> (58/80mm Payment Slip)</li>
+      <li><code>generateThermalSalePaymentPdf</code> (58/80mm Installment Receipt)</li>
+      <li><code>generateThermalWorkPdf</code> (58/80mm Work Slip)</li>
+      <li><code>generateThermalKhataPdf</code> (58/80mm Khata Voucher)</li>
+      <li><code>generateThermalSummaryPdf</code> (58/80mm Executive Summary)</li>
+      <li><code>generateThermalStatementPdf</code> (58/80mm Account Ledger Slip)</li>
+      <li><code>generateThermalTransactionPdf</code> (58/80mm Transaction Slip)</li>
+    </ol>
+  </li>
+</ul>
+
+<h2>4.16 Module 16: Hardware Printing & Image Thresholding Subsystem</h2>
+<ul>
+  <li><strong>REQ-16-01:</strong> The system shall interface directly with the Windows Print Spooler via <code>printing: ^5.14.2</code>.</li>
+  <li><strong>REQ-16-02:</strong> Color bitmap assets printed to thermal paper shall be processed via monochrome luminance thresholding ($L le 0.6 implies 	ext{Black}$, else $	ext{White}$) to guarantee sharp printing without smudges.</li>
+  <li><strong>REQ-16-03:</strong> The system shall provide an <code>autoPrint</code> configuration toggle to trigger printing automatically upon completing a sale.</li>
+</ul>
+
+<h2>4.17 Module 17: External WhatsApp Automation & Customer Dispatch</h2>
+<ul>
+  <li><strong>REQ-17-01:</strong> Document sharing shall save the generated vector PDF to <code>%USERPROFILE%DocumentsTrailaInvoices&lt;filename&gt;.pdf</code>.</li>
+  <li><strong>REQ-17-02:</strong> The system shall launch WhatsApp Desktop via URI: <code>whatsapp://send?phone=&lt;sanitizedNumber&gt;</code>.</li>
+  <li><strong>REQ-17-03:</strong> The system shall execute <code>explorer.exe /select,"&lt;filePath&gt;"</code> to open Windows Explorer with the generated invoice highlighted for drag-and-drop delivery.</li>
+</ul>
+
+<h2>4.18 Module 18: Workshop Branding & Application Profile Settings</h2>
+<ul>
+  <li><strong>REQ-18-01:</strong> The application shall store corporate letterhead metadata in the <code>AppProfiles</code> table: Business Name, Address, Owner Name, Telephone, and WhatsApp Number.</li>
+  <li><strong>REQ-18-02:</strong> All branding parameters shall dynamically populate PDF document headers and thermal receipts, falling back to default workshop constants if unconfigured.</li>
+</ul>
+
+<!-- SECTION 5: NON-FUNCTIONAL REQUIREMENTS -->
+<h1>5. NON-FUNCTIONAL REQUIREMENTS</h1>
+
+<h2>5.1 Performance Requirements</h2>
+<ul>
+  <li><strong>NFR-PERF-01 (Query Execution Latency):</strong> Local SQLite database queries executed by <code>loadData()</code> shall execute in under <code>150ms</code> for datasets up to 50,000 records.</li>
+  <li><strong>NFR-PERF-02 (PDF Rendering Speed):</strong> Vector PDF rendering for multi-page statements or thermal receipts shall complete in under <code>350ms</code>.</li>
+  <li><strong>NFR-PERF-03 (UI Frame Rate):</strong> The user interface shall maintain a consistent <code>60 FPS</code> on dual-core x86_64 desktop systems with 4 GB RAM. Global search query filtering shall evaluate without keystroke lag.</li>
+</ul>
+
+<h2>5.2 Reliability & Fault Tolerance</h2>
+<ul>
+  <li><strong>NFR-REL-01 (ACID Transaction Atomicity):</strong> Multi-table operations (e.g., trailer sales touching 7 tables) shall execute inside an atomic <code>_db.transaction()</code>. Any unexpected runtime failure shall cause a complete rollback with zero corrupted data.</li>
+  <li><strong>NFR-REL-02 (Offline-First Execution):</strong> The system shall execute 100% of all computational, database, reporting, and printing workflows offline with zero cloud dependency.</li>
+</ul>
+
+<h2>5.3 Data Integrity & Security</h2>
+<ul>
+  <li><strong>NFR-SEC-01 (Foreign Key Enforcement):</strong> Foreign key constraints (<code>PRAGMA foreign_keys = ON</code>) shall be enforced on every database connection open.</li>
+  <li><strong>NFR-SEC-02 (Cascading Integrity):</strong> Deleting a trailer shall cascade delete child <code>TrailaExpenses</code> and set linked invoices to null. Deleting a sale shall cascade delete linked installment records.</li>
+  <li><strong>NFR-SEC-03 (SQL Injection Immunity):</strong> All database queries shall utilize Drift's type-safe parameterized query builder, guaranteeing complete immunity to SQL injection vulnerabilities.</li>
+</ul>
+
+<h2>5.4 Usability & Human Factors</h2>
+<ul>
+  <li><strong>NFR-USE-01:</strong> The application shall operate in kiosk mode to maximize screen area for workshop environments. All numeric inputs shall feature automatic validation and formatting.</li>
+  <li><strong>NFR-USE-02:</strong> Financial amounts shall consistently display the currency prefix <code>Rs. </code> with clean number formatting.</li>
+</ul>
+
+<!-- SECTION 6: DATA MODELS & DATABASE SPECIFICATIONS -->
+<h1>6. DATA MODELS & RELATIONAL DATABASE SPECIFICATIONS</h1>
+
+<h2>6.1 Entity-Relationship Architecture</h2>
+<div class="diagram-box">
++------------------+         +------------------+         +------------------+
+|     TRAILAS      | 1     * |  TRAILA_EXPENSES | *     1 |    SUPPLIERS     |
+|------------------|---------|------------------|---------|------------------|
+| id (PK)          |         | id (PK)          |         | id (PK)          |
+| name             |         | trailaId (FK)    |         | name             |
+| status           |         | supplierId (FK)  |         | remainingBalance |
+| totalCost        |         | labourId (FK)    |         | advanceBalance   |
++------------------+         | amount, date     |         +------------------+
+         | 1                 +------------------+                   | 1
+         |                            | *                           |
+         | 1                          |                             | *
++------------------+                  | 1                 +------------------+
+|      SALES       |         +------------------+         |     PAYMENTS     |
+|------------------|         |     LABOURS      |         |------------------|
+| id (PK)          |         |------------------|         | id (PK)          |
+| trailaId (FK)    |         | id (PK)          |         | ownerId (FK)     |
+| buyerId (FK)     |         | name             |         | amount           |
+| salePrice        |         | remainingBalance |         | method           |
+| profit           |         +------------------+         +------------------+
++------------------+                                                | 1
+         | *                                                        |
+         | 1                                                        | *
++------------------+                                      +------------------+
+|      BUYERS      |                                      |  SPLIT_DETAILS   |
+|------------------|                                      |------------------|
+| id (PK)          |                                      | id (PK)          |
+| name, phone      |                                      | paymentId (FK)   |
+| cnic, address    |                                      | method, amount   |
++------------------+                                      +------------------+
+</div>
+
+<h2>6.2 Relational Schema Data Dictionary (18 Tables)</h2>
+
+<h3>Table 1: Suppliers</h3>
+<table>
+  <thead>
+    <tr><th>Column Name</th><th>Drift Type</th><th>Constraints</th><th>Default</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>TextColumn</td><td>PRIMARY KEY</td><td>-</td><td>Manual supplier identifier (e.g. <code>S-01</code>).</td></tr>
+    <tr><td><code>name</code></td><td>TextColumn</td><td>NOT NULL</td><td>-</td><td>Supplier legal/contact name.</td></tr>
+    <tr><td><code>phone</code></td><td>TextColumn</td><td>NOT NULL</td><td><code>''</code></td><td>Primary phone number.</td></tr>
+    <tr><td><code>shopName</code></td><td>TextColumn</td><td>NOT NULL</td><td><code>''</code></td><td>Business trading name.</td></tr>
+    <tr><td><code>location</code></td><td>TextColumn</td><td>NOT NULL</td><td><code>''</code></td><td>Market location / district.</td></tr>
+    <tr><td><code>whatsappNumber</code></td><td>TextColumn</td><td>NOT NULL</td><td><code>''</code></td><td>WhatsApp international phone number.</td></tr>
+    <tr><td><code>address</code></td><td>TextColumn</td><td>NOT NULL</td><td><code>''</code></td><td>Physical warehouse address.</td></tr>
+    <tr><td><code>registrationDate</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td>-</td><td>Supplier onboarding date.</td></tr>
+    <tr><td><code>openingBalance</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Seed balance at system initialization.</td></tr>
+    <tr><td><code>totalAmount</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Cumulative sum of purchase invoices.</td></tr>
+    <tr><td><code>totalPaid</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Cumulative payments issued to supplier.</td></tr>
+    <tr><td><code>remainingBalance</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Net payable balance due to supplier.</td></tr>
+    <tr><td><code>advanceBalance</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Advance credit balance held by supplier.</td></tr>
+    <tr><td><code>createdAt</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td><code>currentDateAndTime</code></td><td>Record insertion timestamp.</td></tr>
+  </tbody>
+</table>
+
+<h3>Table 2: Labours</h3>
+<table>
+  <thead>
+    <tr><th>Column Name</th><th>Drift Type</th><th>Constraints</th><th>Default</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>TextColumn</td><td>PRIMARY KEY</td><td>-</td><td>Manual worker identifier (e.g. <code>L-01</code>).</td></tr>
+    <tr><td><code>name</code></td><td>TextColumn</td><td>NOT NULL</td><td>-</td><td>Worker name.</td></tr>
+    <tr><td><code>phone</code></td><td>TextColumn</td><td>NOT NULL</td><td><code>''</code></td><td>Mobile telephone number.</td></tr>
+    <tr><td><code>whatsappNumber</code></td><td>TextColumn</td><td>NOT NULL</td><td><code>''</code></td><td>WhatsApp contact telephone.</td></tr>
+    <tr><td><code>address</code></td><td>TextColumn</td><td>NOT NULL</td><td><code>''</code></td><td>Home residential address.</td></tr>
+    <tr><td><code>registrationDate</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td>-</td><td>Date registered.</td></tr>
+    <tr><td><code>openingBalance</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Seed payable balance.</td></tr>
+    <tr><td><code>totalPayable</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Cumulative work charges logged.</td></tr>
+    <tr><td><code>totalPaid</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Cumulative wages paid.</td></tr>
+    <tr><td><code>remainingBalance</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Net wages balance currently due.</td></tr>
+    <tr><td><code>createdAt</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td><code>currentDateAndTime</code></td><td>Record insertion timestamp.</td></tr>
+  </tbody>
+</table>
+
+<h3>Table 3: Trailas</h3>
+<table>
+  <thead>
+    <tr><th>Column Name</th><th>Drift Type</th><th>Constraints</th><th>Default</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>TextColumn</td><td>PRIMARY KEY</td><td>-</td><td>Chassis / unit serial ID (e.g. <code>T1</code>).</td></tr>
+    <tr><td><code>name</code></td><td>TextColumn</td><td>NOT NULL</td><td>-</td><td>Trailer model / specifications.</td></tr>
+    <tr><td><code>registrationDate</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td>-</td><td>Commencement date.</td></tr>
+    <tr><td><code>status</code></td><td>TextColumn</td><td>NOT NULL</td><td>-</td><td>Status enum: <code>pending</code>, <code>ready</code>, <code>sold</code>.</td></tr>
+    <tr><td><code>totalManufacturingCost</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Total aggregated job cost.</td></tr>
+    <tr><td><code>salePrice</code></td><td>RealColumn</td><td>NULLABLE</td><td>-</td><td>Final sold price.</td></tr>
+    <tr><td><code>createdAt</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td><code>currentDateAndTime</code></td><td>Record insertion timestamp.</td></tr>
+  </tbody>
+</table>
+
+<h3>Table 4: TrailaExpenses</h3>
+<table>
+  <thead>
+    <tr><th>Column Name</th><th>Drift Type</th><th>Constraints</th><th>Default</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>TextColumn</td><td>PRIMARY KEY</td><td>-</td><td>Expense record ID.</td></tr>
+    <tr><td><code>trailaId</code></td><td>TextColumn</td><td>NULLABLE, FK <code>Trailas(id)</code> ON DELETE CASCADE</td><td>-</td><td>Associated trailer unit.</td></tr>
+    <tr><td><code>type</code></td><td>TextColumn</td><td>NOT NULL</td><td>-</td><td>Type: <code>Material</code>, <code>Labour</code>, <code>General</code>.</td></tr>
+    <tr><td><code>description</code></td><td>TextColumn</td><td>NOT NULL</td><td>-</td><td>Description of expenditure.</td></tr>
+    <tr><td><code>amount</code></td><td>RealColumn</td><td>NOT NULL</td><td>-</td><td>Monetary cost.</td></tr>
+    <tr><td><code>date</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td>-</td><td>Transaction date.</td></tr>
+    <tr><td><code>supplierId</code></td><td>TextColumn</td><td>NULLABLE, FK <code>Suppliers(id)</code></td><td>-</td><td>Linked supplier ID.</td></tr>
+    <tr><td><code>labourId</code></td><td>TextColumn</td><td>NULLABLE, FK <code>Labours(id)</code></td><td>-</td><td>Linked labourer ID.</td></tr>
+    <tr><td><code>createdAt</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td><code>currentDateAndTime</code></td><td>Record insertion timestamp.</td></tr>
+  </tbody>
+</table>
+
+<h3>Table 5: Buyers</h3>
+<table>
+  <thead>
+    <tr><th>Column Name</th><th>Drift Type</th><th>Constraints</th><th>Default</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>TextColumn</td><td>PRIMARY KEY</td><td>-</td><td>Buyer unique ID.</td></tr>
+    <tr><td><code>name</code></td><td>TextColumn</td><td>NOT NULL</td><td>-</td><td>Full buyer name.</td></tr>
+    <tr><td><code>phone</code></td><td>TextColumn</td><td>NULLABLE</td><td>-</td><td>Contact telephone.</td></tr>
+    <tr><td><code>cnic</code></td><td>TextColumn</td><td>NULLABLE</td><td>-</td><td>National Identity Card number.</td></tr>
+    <tr><td><code>address</code></td><td>TextColumn</td><td>NULLABLE</td><td>-</td><td>Residential / business address.</td></tr>
+    <tr><td><code>whatsappNumber</code></td><td>TextColumn</td><td>NULLABLE</td><td>-</td><td>WhatsApp phone number.</td></tr>
+    <tr><td><code>createdAt</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td><code>currentDateAndTime</code></td><td>Record insertion timestamp.</td></tr>
+  </tbody>
+</table>
+
+<h3>Table 6: Sales</h3>
+<table>
+  <thead>
+    <tr><th>Column Name</th><th>Drift Type</th><th>Constraints</th><th>Default</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>TextColumn</td><td>PRIMARY KEY</td><td>-</td><td>Sale identifier (<code>S-...</code>).</td></tr>
+    <tr><td><code>trailaId</code></td><td>TextColumn</td><td>NOT NULL, FK <code>Trailas(id)</code> ON DELETE CASCADE</td><td>-</td><td>Associated trailer unit.</td></tr>
+    <tr><td><code>buyerId</code></td><td>TextColumn</td><td>NOT NULL, FK <code>Buyers(id)</code></td><td>-</td><td>Purchaser entity ID.</td></tr>
+    <tr><td><code>salePrice</code></td><td>RealColumn</td><td>NOT NULL</td><td>-</td><td>Gross agreed sale price.</td></tr>
+    <tr><td><code>manufacturingCost</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Production cost at sale time.</td></tr>
+    <tr><td><code>profit</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Calculated gross profit margin.</td></tr>
+    <tr><td><code>saleDate</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td>-</td><td>Contract finalization date.</td></tr>
+    <tr><td><code>paidAmount</code></td><td>RealColumn</td><td>NOT NULL</td><td>-</td><td>Total paid to date.</td></tr>
+    <tr><td><code>remainingBalance</code></td><td>RealColumn</td><td>NOT NULL</td><td>-</td><td>Outstanding balance due on this unit.</td></tr>
+    <tr><td><code>receiptNumber</code></td><td>TextColumn</td><td>NOT NULL</td><td>-</td><td>Receipt sequence code (<code>SALE-XXXXX</code>).</td></tr>
+    <tr><td><code>globalPreviousBalance</code></td><td>RealColumn</td><td>NOT NULL</td><td><code>0.0</code></td><td>Buyer debt across all other units.</td></tr>
+    <tr><td><code>createdAt</code></td><td>DateTimeColumn</td><td>NOT NULL</td><td><code>currentDateAndTime</code></td><td>Record insertion timestamp.</td></tr>
+  </tbody>
+</table>
+
+<h3>Table 7: Invoices & InvoiceItems</h3>
+<p>
+<code>Invoices</code>: Stores formal vouchers for all 6 transaction types (<code>purchase</code>, <code>payment</code>, <code>labourWork</code>, <code>labourPayment</code>, <code>sale</code>, <code>salePayment</code>). Contains <code>previousBalance</code> and <code>remainingBalance</code> snapshots to ensure permanent historical accuracy.<br>
+<code>InvoiceItems</code>: Line item details (<code>productName</code>, <code>quantity</code>, <code>unitPrice</code>, <code>lineTotal</code>) linked via <code>invoiceId</code> with cascading deletion.
+</p>
+
+<h3>Table 8: Payments & SplitDetails</h3>
+<p>
+<code>Payments</code>: Tracks disbursements and collections. Contains <code>receiptNumber</code>, <code>amount</code>, <code>date</code>, <code>method</code>, <code>previousBalance</code>, and <code>updatedBalance</code>.<br>
+<code>SplitDetails</code>: Child table supporting multi-account payments (e.g. Rs. 50,000 Cash + Rs. 150,000 Bank), linked via <code>paymentId</code> with cascading deletion.
+</p>
+
+<h3>Table 9: Accounts & Transactions</h3>
+<p>
+<code>Accounts</code>: Treasury wallets (<code>id</code>, <code>name</code>, <code>balance</code>, <code>type</code>: cash/bank/wallet).<br>
+<code>Transactions</code>: Double-entry audit ledger storing every balance alteration (<code>type</code>: <code>add</code>, <code>take</code>, <code>transfer</code>, <code>opening</code>), linked transfer references, person name, description, and timestamps.
+</p>
+
+<h3>Table 10: Khatas & KhataItems</h3>
+<p>
+<code>Khatas</code>: Informal counter-party credit folders (<code>personName</code>, <code>openingBalance</code>, <code>totalAmount</code>, <code>paidAmount</code>, <code>remainingBalance</code>).<br>
+<code>KhataItems</code>: Individual debit/credit lines (<code>itemName</code>, <code>price</code>, <code>type</code>: cashIn/cashOut, <code>paymentMethod</code>, <code>date</code>).
+</p>
+
+<h3>Table 11: AppProfiles & PrinterSettings</h3>
+<p>
+<code>AppProfiles</code>: Workshop trading metadata (<code>businessName</code>, <code>ownerName</code>, <code>phoneNumber</code>, <code>address</code>, <code>whatsappNumber</code>).<br>
+<code>PrinterSettings</code>: Hardware configuration (<code>paperSize</code>: 58mm/80mm, <code>autoCut</code>, <code>autoPrint</code>, <code>connectionType</code>).
+</p>
+
+<!-- SECTION 7: MATHEMATICAL FORMULATIONS -->
+<h1>7. MATHEMATICAL FORMULATIONS & CORE ALGORITHMS</h1>
+
+<h2>7.1 Traila Manufacturing Cost Aggregation Algorithm</h2>
+<div class="formula-box">
+  C_{	ext{Traila}} = sum_{m in M} 	ext{Amount}_m + sum_{w in W} 	ext{Amount}_w + sum_{e in E} 	ext{Amount}_e
+</div>
+<pre>
+Future&lt;void&gt; _syncTrailaTotalCost(String trailaId) async {
+  final expenses = await (_db.select(_db.trailaExpenses)
+    ..where((t) =&gt; t.trailaId.equals(trailaId))).get();
+  final totalCost = expenses.fold&lt;double&gt;(0.0, (sum, e) =&gt; sum + e.amount);
+
+  await (_db.update(_db.trailas)..where((t) =&gt; t.id.equals(trailaId))).write(
+    TrailasCompanion(totalManufacturingCost: Value(totalCost)),
+  );
+}
+</pre>
+
+<h2>7.2 Supplier Dual-Balance Settlement Logic</h2>
+<div class="formula-box">
+  	ext{NetBalance} = 	ext{OpeningBalance} + sum 	ext{Purchases} - sum 	ext{Payments} \
+  	ext{RemainingBalance} = max(0.0, 	ext{NetBalance}) quad 	ext{(Payable Debt)} \
+  	ext{AdvanceBalance} = max(0.0, -	ext{NetBalance}) quad 	ext{(Advance Credit)}
+</div>
+<pre>
+final net = supplier.openingBalance + totalAmount - totalPaid;
+final remaining = net &gt; 0 ? net : 0.0;
+final advance = net &lt; 0 ? -net : 0.0;
+
+await (_db.update(_db.suppliers)..where((t) =&gt; t.id.equals(supplierId))).write(
+  SuppliersCompanion(
+    totalAmount: Value(totalAmount),
+    totalPaid: Value(totalPaid),
+    remainingBalance: Value(remaining),
+    advanceBalance: Value(advance),
+  ),
+);
+</pre>
+
+<h2>7.3 Double-Entry Inter-Account Fund Transfer</h2>
+<div class="formula-box">
+  B_{	ext{Source, New}} = B_{	ext{Source, Current}} - 	ext{Amount} \
+  B_{	ext{Dest, New}} = B_{	ext{Dest, Current}} + 	ext{Amount}
+</div>
+<pre>
+await _db.transaction(() async {
+  // 1. Post Debit to Source Account
+  await _db.into(_db.transactions).insert(TransactionsCompanion.insert(
+    id: '$transferId-OUT', accountName: fromAccount.name,
+    type: TransactionType.transfer.name, amount: amount,
+    person: toAccount.name, description: 'Transfer OUT to &#36;{toAccount.name}',
+    date: date, category: 'Transfer', linkedTransferId: Value(transferId),
+  ));
+  // 2. Post Credit to Destination Account
+  await _db.into(_db.transactions).insert(TransactionsCompanion.insert(
+    id: '$transferId-IN', accountName: toAccount.name,
+    type: TransactionType.transfer.name, amount: amount,
+    person: fromAccount.name, description: 'Transfer IN from &#36;{fromAccount.name}',
+    date: date, category: 'Transfer', linkedTransferId: Value(transferId),
+  ));
+  // 3. Atomically update balances
+  await (_db.update(_db.accounts)..where((t) =&gt; t.name.equals(fromAccount.name)))
+      .write(AccountsCompanion(balance: Value(fromAccount.balance - amount)));
+  await (_db.update(_db.accounts)..where((t) =&gt; t.name.equals(toAccount.name)))
+      .write(AccountsCompanion(balance: Value(toAccount.balance + amount)));
+});
+</pre>
+
+<h2>7.4 Monochrome Thermal Image Luminance Thresholding</h2>
+<div class="formula-box">
+  L = rac{0.299 cdot R + 0.587 cdot G + 0.114 cdot B}{255.0} \
+  P_{	ext{Output}} = egin{cases} 255 	ext{ (White)}, & L &gt; 0.6 \ 0 	ext{ (Pure Black)}, & L le 0.6 end{cases}
+</div>
+<pre>
+for (final pixel in processedImage) {
+  final double l = (0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b) / 255.0;
+  if (l &gt; 0.6) {
+    pixel.r = 255; pixel.g = 255; pixel.b = 255;
+  } else {
+    pixel.r = 0; pixel.g = 0; pixel.b = 0;
+  }
+}
+</pre>
+
+<!-- SECTION 8: USE CASES -->
+<h1>8. END-TO-END OPERATIONAL USE CASES</h1>
+
+<h2>8.1 Use Case UC-01: Traila Manufacturing & Customer Sale</h2>
+<table>
+  <tr><th style="width: 25%;">Use Case ID:</th><td>UC-01</td></tr>
+  <tr><th>Title:</th><td>Complete Traila Manufacturing from Assembly to Commercial Sale</td></tr>
+  <tr><th>Actors:</th><td>Workshop Manager, Cashier/Accountant, Buyer</td></tr>
+  <tr><th>Pre-conditions:</th><td>Application initialized, accounts provisioned, suppliers and workers registered.</td></tr>
+  <tr><th>Main Success Scenario:</th><td>
+    <ol>
+      <li>Manager registers new Traila ID <code>T-101</code> ("14-Wheeler Heavy Haulage"). System sets status to <code>pending</code>.</li>
+      <li>Procurement buys steel plates from Supplier <code>S-01</code> (Rs. 350,000), linking to Traila <code>T-101</code>. Unit cost updates to Rs. 350,000.</li>
+      <li>Labour worker <code>L-03</code> logs chassis welding work (Rs. 100,000), linked to <code>T-101</code>. Unit cost updates to Rs. 450,000.</li>
+      <li>Assembly finishes: Manager toggles trailer status to <code>ready</code>.</li>
+      <li>Customer purchases <code>T-101</code> for Rs. 650,000, paying Rs. 200,000 Cash downpayment.</li>
+      <li>System validates: Profit = Rs. 200,000; Remaining Debt = Rs. 450,000; Trailer status becomes <code>sold</code>; Cash account receives Rs. 200,000.</li>
+      <li>System triggers thermal POS receipt printing and launches WhatsApp Desktop with PDF file highlighted in Explorer.</li>
+    </ol>
+  </td></tr>
+  <tr><th>Post-conditions:</th><td>Unit status marked <code>sold</code>, profit recorded, treasury updated, customer receipt delivered.</td></tr>
+</table>
+
+<h2>8.2 Use Case UC-02: Supplier Procurement with Partial Upfront Settlement</h2>
+<table>
+  <tr><th style="width: 25%;">Use Case ID:</th><td>UC-02</td></tr>
+  <tr><th>Title:</th><td>Raw Material Purchase with Partial Cash Settlement</td></tr>
+  <tr><th>Actors:</th><td>Storekeeper / Cashier, Supplier</td></tr>
+  <tr><th>Main Success Scenario:</th><td>
+    <ol>
+      <li>Cashier opens Supplier Profile <code>S-02 (Khyber Axles)</code>. Current balance: Rs. 0.</li>
+      <li>Cashier enters purchase bill for 2 Heavy Axles at Rs. 100,000 each (Total: Rs. 200,000).</li>
+      <li>Cashier logs an upfront payment of Rs. 80,000 from <code>Meezan Bank</code> account.</li>
+      <li>System atomically executes: creates invoice <code>INV-SP-0012</code>; snapshots previous balance (Rs. 0); creates payment record (Rs. 80,000); debits Meezan Bank account by Rs. 80,000; updates supplier debt to Rs. 120,000.</li>
+      <li>System prints 80mm thermal purchase voucher and saves A4 PDF statement.</li>
+    </ol>
+  </td></tr>
+  <tr><th>Post-conditions:</th><td>Supplier ledger shows net debt Rs. 120,000; bank balance reduced by Rs. 80,000.</td></tr>
+</table>
+
+<!-- SECTION 9: TRACEABILITY MATRIX -->
+<h1>9. REQUIREMENTS TRACEABILITY MATRIX & CODE MAP</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 14%;">Requirement ID</th>
+      <th style="width: 32%;">Requirement Description</th>
+      <th style="width: 32%;">Primary Source Code File</th>
+      <th style="width: 22%;">Target Symbol / Method</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>REQ-01-01</strong></td><td>Kiosk Mode Window Initialization</td><td><code>lib/main.dart</code></td><td><code>main</code>, <code>windowManager</code></td></tr>
+    <tr><td><strong>REQ-02-01</strong></td><td>Drift Schema Definition v11</td><td><code>lib/database/database.dart</code></td><td><code>AppDatabase</code>, <code>migration</code></td></tr>
+    <tr><td><strong>REQ-02-02</strong></td><td>Database Self-Healing Engine</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>loadData()</code></td></tr>
+    <tr><td><strong>REQ-02-03</strong></td><td>Legacy Invoice Backfill</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>loadData()</code></td></tr>
+    <tr><td><strong>REQ-03-01</strong></td><td>Fleet Status & Dashboard Metrics</td><td><code>lib/screens/dashboard_screen.dart</code></td><td><code>DashboardScreen</code></td></tr>
+    <tr><td><strong>REQ-04-01</strong></td><td>Traila Fleet Registration</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>addTraila()</code></td></tr>
+    <tr><td><strong>REQ-04-04</strong></td><td>Traila Production Status Updates</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>updateTrailaStatus()</code></td></tr>
+    <tr><td><strong>REQ-05-01</strong></td><td>Manufacturing Cost Aggregation</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>_syncTrailaTotalCost()</code></td></tr>
+    <tr><td><strong>REQ-06-02</strong></td><td>Supplier Purchase Bill Entry</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>addSupplierPurchase()</code></td></tr>
+    <tr><td><strong>REQ-07-01</strong></td><td>Supplier Dual-Balance Settlement</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>_syncSupplierBalances()</code></td></tr>
+    <tr><td><strong>REQ-07-03</strong></td><td>Supplier Multi-Account Split Payment</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>_addSupplierPaymentInternal()</code></td></tr>
+    <tr><td><strong>REQ-08-02</strong></td><td>Labour Work Order Logging</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>addLabourWork()</code></td></tr>
+    <tr><td><strong>REQ-09-01</strong></td><td>Labour Wage Balance Reconciliation</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>_syncLabourBalances()</code></td></tr>
+    <tr><td><strong>REQ-10-01</strong></td><td>Ready Unit Sale & Profit Engine</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>sellTraila()</code></td></tr>
+    <tr><td><strong>REQ-11-01</strong></td><td>Buyer Consolidated Debt Tracking</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>sellTraila()</code></td></tr>
+    <tr><td><strong>REQ-11-02</strong></td><td>Sale Installment Settlement</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>addSalePayment()</code></td></tr>
+    <tr><td><strong>REQ-12-04</strong></td><td>Khata Bidirectional Account Sync</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>addKhata()</code></td></tr>
+    <tr><td><strong>REQ-13-03</strong></td><td>Atomic Double-Entry Fund Transfer</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>transferMoney()</code></td></tr>
+    <tr><td><strong>REQ-14-02</strong></td><td>P&L Financial Engine Evaluation</td><td><code>lib/screens/expense_revenue_screen.dart</code></td><td><code>_ExpenseRevenueScreenState</code></td></tr>
+    <tr><td><strong>REQ-15-01</strong></td><td>Vector PDF Document Generation</td><td><code>lib/services/invoice_pdf_service.dart</code></td><td><code>InvoicePdfService</code></td></tr>
+    <tr><td><strong>REQ-16-03</strong></td><td>Thermal Monochrome Thresholding</td><td><code>lib/services/unified_print_service.dart</code></td><td><code>_getThermalLogo()</code></td></tr>
+    <tr><td><strong>REQ-17-01</strong></td><td>WhatsApp Automation & Explorer</td><td><code>lib/services/whatsapp_service.dart</code></td><td><code>_sendWhatsAppWindows()</code></td></tr>
+    <tr><td><strong>REQ-18-01</strong></td><td>Enterprise Branding Metadata</td><td><code>lib/cubits/erp_cubit.dart</code></td><td><code>updateAppProfile()</code></td></tr>
+  </tbody>
+</table>
+
+<!-- SECTION 10: GLOSSARY -->
+<h1>10. GLOSSARY & DOMAIN TERMINOLOGY</h1>
+
+<table>
+  <thead>
+    <tr><th style="width: 25%;">Term</th><th>Domain Definition & Operational Usage</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Traila (ٹرالہ)</strong></td><td>Heavy agricultural or commercial vehicular trailer, articulated trolley, or flatbed manufactured and sold by the workshop.</td></tr>
+    <tr><td><strong>Khata (کھاتہ)</strong></td><td>Traditional double-entry debit/credit ledger maintained for suppliers, labourers, or general business counter-parties.</td></tr>
+    <tr><td><strong>Udhaar (ادھار)</strong></td><td>Commercial credit extended to customers or credit balances owed to raw material suppliers.</td></tr>
+    <tr><td><strong>Manufacturing Cost</strong></td><td>Internal unit production expenditure calculated by aggregating materials, piece-rate labour charges, and direct expenses.</td></tr>
+    <tr><td><strong>Advance Balance</strong></td><td>Credit balance held in favor of the workshop when payments exceed billed procurement goods.</td></tr>
+    <tr><td><strong>Kiosk Mode</strong></td><td>Desktop window execution configuration where OS window decorations are stripped and the app runs auto-maximized.</td></tr>
+    <tr><td><strong>ESC/POS</strong></td><td>Standardized command protocol utilized by thermal receipt printers.</td></tr>
+    <tr><td><strong>Drift ORM</strong></td><td>Type-safe reactive persistence library for Dart/Flutter abstracting SQLite with schema migration management.</td></tr>
+    <tr><td><strong>BLoC / Cubit</strong></td><td>Business Logic Component pattern managing unidirectional reactive state flow.</td></tr>
+  </tbody>
+</table>
+
+<div style="margin-top: 30pt; padding-top: 14pt; border-top: 2px solid #cbd5e1; text-align: center; color: #64748b; font-size: 8.5pt;">
+  <strong>Traila ERP Specification Document</strong> • Master Engineering Release • Generated October 2026
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1864 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import '../cubits/erp_cubit.dart';
+import '../models/labour.dart';
+import '../models/payment.dart';
+import '../models/traila.dart';
+import '../services/thermal_printer_service.dart';
+import '../services/invoice_pdf_service.dart';
+import '../services/whatsapp_service.dart';
+import '../widgets/print_preview_dialog.dart';
+
+class LabourProfileScreen extends StatelessWidget {
+  final String labourId;
+  const LabourProfileScreen({super.key, required this.labourId});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ERPCubit, ERPState>(
+      builder: (context, state) {
+        final labour = state.labours.firstWhere(
+          (l) => l.id == labourId,
+          orElse: () => Labour(
+            id: 'Error',
+            name: 'Not Found',
+            phone: '',
+            address: '',
+            registrationDate: DateTime.now(),
+          ),
+        );
+        
+        if (labour.id == 'Error') {
+          return const Scaffold(body: Center(child: Text('Labourer not found')));
+        }
+        
+        return Scaffold(
+          backgroundColor: Colors.grey.shade50,
+          appBar: AppBar(
+            title: Text('Labour Ledger: ${labour.name} (${labour.id})'),
+            actions: [
+              IconButton(
+                onPressed: () => _showEditLabourDialog(context, labour),
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Edit Profile',
+              ),
+              IconButton(
+                onPressed: () async {
+                  final state = context.read<ERPCubit>().state;
+                  final pdfBytes = await InvoicePdfService.generateStatementPdf(
+                    personName: labour.name,
+                    type: "Labour",
+                    date: DateFormat('dd-MM-yyyy').format(DateTime.now()),
+                    remainingBalance: labour.remainingBalance,
+                    profile: state.appProfile,
+                  );
+                  if (!context.mounted) return;
+                  await PrintPreviewDialog.show(
+                    context, 
+                    pdfBytes, 
+                    'Statement_${labour.name}.pdf',
+                  );
+                },
+                icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.red),
+                tooltip: 'Save Statement as PDF',
+              ),
+              IconButton(
+                onPressed: () async {
+                  final state = context.read<ERPCubit>().state;
+                  try {
+                    final success = await ThermalPrinterService.printLabourStatement(
+                      context,
+                      labour: labour,
+                      profile: state.appProfile,
+                      settings: state.printerSetting,
+                    );
+                    if (!success && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to print statement.')));
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))));
+                    }
+                  }
+                },
+                icon: const Icon(Icons.print_outlined),
+                tooltip: 'Print Statement',
+              ),
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _showEditLabourDialog(context, labour);
+                  } else if (value == 'delete') {
+                    _showDeleteConfirmation(context, labour);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 20, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text('Edit Profile'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Delete Profile'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth >= 960;
+
+              if (isDesktop) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left Fixed Panel: Identity, Financial Metrics, Action Hub
+                    SizedBox(
+                      width: 380,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            _buildLabourIdentityCard(context, labour),
+                            const SizedBox(height: 16),
+                            _buildFinancialOverview(labour),
+                            const SizedBox(height: 16),
+                            _buildActionHub(context, labour),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+                    // Right Expanded Panel: Unified Ledger Statement
+                    Expanded(
+                      child: _UnifiedLabourLedger(labour: labour),
+                    ),
+                  ],
+                );
+              } else {
+                // Mobile / Tablet Responsive Stack
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      _buildLabourIdentityCard(context, labour),
+                      const SizedBox(height: 16),
+                      _buildFinancialOverview(labour),
+                      const SizedBox(height: 16),
+                      _buildActionHub(context, labour),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        height: 600,
+                        child: _UnifiedLabourLedger(labour: labour),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLabourIdentityCard(BuildContext context, Labour labour) {
+    final initials = labour.name.trim().isNotEmpty
+        ? labour.name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join('').toUpperCase()
+        : 'LB';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha:0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: const Color(0xFFEFF6FF),
+                child: Text(
+                  initials,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Color(0xFF1D4ED8)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      labour.name,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDBEAFE),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'ID: ${labour.id}',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
+                onPressed: () => _showEditLabourDialog(context, labour),
+                tooltip: 'Edit Profile',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          if (labour.phone.isNotEmpty) ...[
+            Row(
+              children: [
+                const Icon(Icons.phone_outlined, size: 16, color: Color(0xFF64748B)),
+                const SizedBox(width: 8),
+                Text(labour.phone, style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
+                const Spacer(),
+                if (labour.whatsappNumber.isNotEmpty || labour.phone.isNotEmpty)
+                  InkWell(
+                    onTap: () async {
+                      final wa = labour.whatsappNumber.isNotEmpty ? labour.whatsappNumber : labour.phone;
+                      final state = context.read<ERPCubit>().state;
+                      try {
+                        await WhatsAppService.sendLabourStatement(
+                          phone: wa,
+                          personName: labour.name,
+                          remainingBalance: labour.remainingBalance,
+                          profile: state.appProfile,
+                        );
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+                        }
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.chat, size: 12, color: Color(0xFF16A34A)),
+                          SizedBox(width: 4),
+                          Text('WhatsApp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF166534))),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (labour.address.isNotEmpty)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF64748B)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(labour.address, style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFinancialOverview(Labour labour) {
+    final balance = labour.remainingBalance;
+    final isAdvance = balance < -0.01;
+    final isDue = balance > 0.01;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha:0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'WAGE ACCOUNT SUMMARY',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.engineering_outlined, size: 14, color: Color(0xFF475569)),
+                          SizedBox(width: 4),
+                          Text('Wages Earned', style: TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Rs. ${NumberFormat("#,##0").format(labour.totalPayable)}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0FDF4),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFDCFCE7)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.check_circle_outline_rounded, size: 14, color: Color(0xFF16A34A)),
+                          SizedBox(width: 4),
+                          Text('Wages Paid', style: TextStyle(fontSize: 11, color: Color(0xFF166534), fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Rs. ${NumberFormat("#,##0").format(labour.totalPaid)}',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF166534)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // Net Balance Spotlight Banner
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isAdvance
+                  ? const Color(0xFFECFDF5)
+                  : (isDue ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isAdvance
+                    ? const Color(0xFFA7F3D0)
+                    : (isDue ? const Color(0xFFFECACA) : const Color(0xFFE2E8F0)),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      isAdvance
+                          ? 'ADVANCE WAGE PAID'
+                          : (isDue ? 'NET WAGES PAYABLE (DUE)' : 'ALL WAGES SETTLED'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.8,
+                        color: isAdvance
+                            ? const Color(0xFF047857)
+                            : (isDue ? const Color(0xFFB91C1C) : const Color(0xFF475569)),
+                      ),
+                    ),
+                    Icon(
+                      isAdvance
+                          ? Icons.check_circle_rounded
+                          : (isDue ? Icons.pending_actions_rounded : Icons.done_all_rounded),
+                      size: 16,
+                      color: isAdvance
+                          ? const Color(0xFF047857)
+                          : (isDue ? const Color(0xFFB91C1C) : const Color(0xFF475569)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Rs. ${NumberFormat("#,##0").format(balance.abs())}',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: isAdvance
+                        ? const Color(0xFF065F46)
+                        : (isDue ? const Color(0xFF991B1B) : const Color(0xFF1E293B)),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isAdvance
+                      ? 'Worker received advance wages. This credit will be deducted from future work charges.'
+                      : (isDue
+                          ? 'Wages owed to worker for completed fabrication and repairs.'
+                          : 'Zero remaining wage balance. All payments up to date.'),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isAdvance
+                        ? const Color(0xFF065F46)
+                        : (isDue ? const Color(0xFF991B1B) : const Color(0xFF64748B)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionHub(BuildContext context, Labour labour) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha:0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'ACTIONS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 14),
+          ElevatedButton.icon(
+            onPressed: () => _showPaymentDialog(context, labour),
+            icon: const Icon(Icons.payments_outlined, size: 18),
+            label: const Text('Record Wage Payment'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF16A34A),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton.icon(
+            onPressed: () => _showWorkDialog(context, labour),
+            icon: const Icon(Icons.engineering_rounded, size: 18),
+            label: const Text('Add Work Entry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 14),
+          const Text(
+            'PRINT & STATEMENTS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final state = context.read<ERPCubit>().state;
+                    try {
+                      await ThermalPrinterService.printLabourStatement(
+                        context,
+                        labour: labour,
+                        profile: state.appProfile,
+                        settings: state.printerSetting,
+                      );
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print error: $e')));
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.receipt_rounded, size: 16),
+                  label: const Text('Thermal POS (58/80mm)'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: const Color(0xFF0F172A),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final state = context.read<ERPCubit>().state;
+                    final pdfBytes = await InvoicePdfService.generateStatementPdf(
+                      personName: labour.name,
+                      type: 'Labour',
+                      date: DateFormat('dd-MM-yyyy').format(DateTime.now()),
+                      remainingBalance: labour.remainingBalance,
+                      profile: state.appProfile,
+                    );
+                    if (!context.mounted) return;
+                    await PrintPreviewDialog.show(
+                      context,
+                      pdfBytes,
+                      'Statement_${labour.name}.pdf',
+                      isThermal: false,
+                    );
+                  },
+                  icon: const Icon(Icons.picture_as_pdf, size: 16, color: Colors.red),
+                  label: const Text('PDF Slip'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: Colors.red.shade700,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditLabourDialog(BuildContext context, Labour labour) {
+    showDialog(
+      context: context,
+      builder: (context) => _EditLabourDialog(labour: labour),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, Labour labour) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Labourer?'),
+        content: Text('This will permanently delete ${labour.name} and all their work and payment history. This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final cubit = context.read<ERPCubit>();
+              Navigator.pop(context);
+              await cubit.deleteLabour(labour.id);
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Labourer ${labour.name} deleted')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Delete Permanently'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWorkDialog(BuildContext context, Labour labour) {
+    showDialog(context: context, builder: (context) => _LabourWorkDialog(labour: labour));
+  }
+
+  void _showPaymentDialog(BuildContext context, Labour labour) {
+    showDialog(context: context, builder: (context) => _LabourPaymentDialog(labour: labour));
+  }
+}
+
+Widget _buildLabourBalanceBadge(double balance) {
+  if (balance < -0.01) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFECFDF5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFA7F3D0)),
+      ),
+      child: Text(
+        'Advance: Rs. ${NumberFormat("#,##0").format(balance.abs())}',
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
+      ),
+    );
+  } else if (balance > 0.01) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Text(
+        'Due: Rs. ${NumberFormat("#,##0").format(balance)}',
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFB91C1C)),
+      ),
+    );
+  } else {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text(
+        'Settled (Rs. 0)',
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+      ),
+    );
+  }
+}
+
+class _UnifiedLabourLedger extends StatefulWidget {
+  final Labour labour;
+  const _UnifiedLabourLedger({required this.labour});
+
+  @override
+  State<_UnifiedLabourLedger> createState() => _UnifiedLabourLedgerState();
+}
+
+class _UnifiedLabourLedgerState extends State<_UnifiedLabourLedger> {
+  String _filter = 'all'; // 'all', 'work', 'payments'
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<_LabourLedgerRow> items = [];
+
+    for (final w in widget.labour.workEntries) {
+      items.add(_LabourLedgerRow(
+        id: w.id,
+        date: w.date,
+        isWork: true,
+        title: w.entryNumber,
+        subtitle: '${w.trailaId != null ? "Traila #${w.trailaId} • " : ""}${w.description}',
+        amount: w.cost,
+        runningBalance: w.updatedBalance,
+        work: w,
+      ));
+    }
+
+    for (final p in widget.labour.payments) {
+      items.add(_LabourLedgerRow(
+        id: p.id,
+        date: p.date,
+        isWork: false,
+        title: 'Payment (${p.method})',
+        subtitle: 'Paid to ${widget.labour.name}',
+        amount: p.amount,
+        runningBalance: p.updatedBalance ?? widget.labour.remainingBalance,
+        payment: p,
+      ));
+    }
+
+    items.sort((a, b) => b.date.compareTo(a.date));
+
+    final filtered = items.where((it) {
+      if (_filter == 'work' && !it.isWork) return false;
+      if (_filter == 'payments' && it.isWork) return false;
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase();
+        return it.title.toLowerCase().contains(q) ||
+            it.subtitle.toLowerCase().contains(q) ||
+            it.amount.toString().contains(q);
+      }
+      return true;
+    }).toList();
+
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          // Filter Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 38,
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (v) => setState(() => _searchQuery = v.trim()),
+                      decoration: InputDecoration(
+                        hintText: 'Search work jobs, invoice #, amount...',
+                        hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade400),
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        suffixIcon: _searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 16),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
+                              )
+                            : null,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                SegmentedButton<String>(
+                  segments: [
+                    ButtonSegment(value: 'all', label: Text('All (${items.length})')),
+                    ButtonSegment(value: 'work', label: Text('Work (${widget.labour.workEntries.length})')),
+                    ButtonSegment(value: 'payments', label: Text('Payments (${widget.labour.payments.length})')),
+                  ],
+                  selected: {_filter},
+                  onSelectionChanged: (val) => setState(() => _filter = val.first),
+                  style: ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Ledger Table / Cards
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.engineering_outlined, size: 52, color: Colors.grey.shade300),
+                        const SizedBox(height: 12),
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'No records match "$_searchQuery"'
+                              : 'No work or payment history recorded yet',
+                          style: TextStyle(fontSize: 15, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: filtered.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final item = filtered[index];
+                      return _buildLedgerCard(context, item);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLedgerCard(BuildContext context, _LabourLedgerRow item) {
+    final bgBadge = item.isWork ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4);
+    final borderBadge = item.isWork ? const Color(0xFFBFDBFE) : const Color(0xFFDCFCE7);
+    final textColor = item.isWork ? const Color(0xFF1D4ED8) : const Color(0xFF16A34A);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha:0.015),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: const Border(),
+        collapsedShape: const Border(),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: bgBadge,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: borderBadge),
+          ),
+          child: Icon(
+            item.isWork ? Icons.engineering_rounded : Icons.payments_rounded,
+            color: textColor,
+            size: 20,
+          ),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: bgBadge,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                item.isWork ? 'WORK ENTRY' : 'WAGE PAYMENT',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  color: textColor,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const Spacer(),
+            Text(
+              '${item.isWork ? "+" : "-"} Rs. ${NumberFormat("#,##0").format(item.amount)}',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                color: item.isWork ? const Color(0xFF1E293B) : const Color(0xFF16A34A),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            children: [
+              Text(
+                DateFormat('dd MMM yyyy, hh:mm a').format(item.date),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+              const SizedBox(width: 10),
+              Text('• ${item.subtitle}', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+              const Spacer(),
+              _buildLabourBalanceBadge(item.runningBalance),
+            ],
+          ),
+        ),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: item.isWork ? const Color(0xFFF8FAFC) : const Color(0xFFF0FDF4),
+              border: const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Thermal print button (with 58mm/80mm roll switcher!)
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final state = context.read<ERPCubit>().state;
+                    try {
+                      if (item.isWork && item.work != null) {
+                        await ThermalPrinterService.printLabourWork(
+                          context,
+                          labour: widget.labour,
+                          work: item.work!,
+                          profile: state.appProfile,
+                          settings: state.printerSetting,
+                          printDuplicate: true,
+                        );
+                      } else if (!item.isWork && item.payment != null) {
+                        await ThermalPrinterService.printLabourPayment(
+                          context,
+                          labour: widget.labour,
+                          payment: item.payment!,
+                          previousBalance: item.payment!.previousBalance ?? 0,
+                          newBalance: item.runningBalance,
+                          profile: state.appProfile,
+                          settings: state.printerSetting,
+                          printDuplicate: true,
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Print error: $e')));
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.receipt_rounded, size: 16),
+                  label: const Text('Thermal Receipt (58/80mm)'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: const Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // PDF button
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final state = context.read<ERPCubit>().state;
+                    if (item.isWork && item.work != null) {
+                      final pdfBytes = await InvoicePdfService.generateLabourWorkPdf(
+                        labourName: widget.labour.name,
+                        date: DateFormat('dd-MM-yyyy').format(item.work!.date),
+                        trailaId: item.work!.trailaId,
+                        workPrice: item.work!.cost,
+                        previousBalance: item.work!.previousOutstanding,
+                        newBalance: item.runningBalance,
+                        profile: state.appProfile,
+                      );
+                      if (!context.mounted) return;
+                      await PrintPreviewDialog.show(
+                        context,
+                        pdfBytes,
+                        'Work_${item.work!.entryNumber}.pdf',
+                      );
+                    } else if (!item.isWork && item.payment != null) {
+                      final pdfBytes = await InvoicePdfService.generateLabourPaymentPdf(
+                        labourName: widget.labour.name,
+                        date: DateFormat('dd-MM-yyyy').format(item.payment!.date),
+                        paymentMethod: item.payment!.method,
+                        paidAmount: item.payment!.amount,
+                        previousBalance: item.payment!.previousBalance ?? 0,
+                        newBalance: item.runningBalance,
+                        profile: state.appProfile,
+                      );
+                      if (!context.mounted) return;
+                      await PrintPreviewDialog.show(
+                        context,
+                        pdfBytes,
+                        'Payment_${widget.labour.name}.pdf',
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.picture_as_pdf, size: 16, color: Colors.red),
+                  label: const Text('PDF'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: Colors.red.shade700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                  tooltip: 'Delete transaction',
+                  onPressed: () {
+                    if (item.isWork && item.work != null) {
+                      _showDeleteWorkDialog(context, item.work!.id);
+                    } else if (!item.isWork && item.payment != null) {
+                      _showDeletePaymentDialog(context, item.payment!.id);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteWorkDialog(BuildContext context, String workId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Work Invoice?'),
+        content: const Text('Deleting this work invoice will recalculate remaining wages. Continue?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () async {
+              await context.read<ERPCubit>().deleteLabourWork(workId);
+              if (!context.mounted) return;
+              Navigator.pop(context);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeletePaymentDialog(BuildContext context, String paymentId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Payment Record?'),
+        content: const Text('Deleting this payment record will recalculate remaining balance. Continue?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () async {
+              await context.read<ERPCubit>().deleteLabourPayment(paymentId);
+              if (!context.mounted) return;
+              Navigator.pop(context);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LabourLedgerRow {
+  final String id;
+  final DateTime date;
+  final bool isWork;
+  final String title;
+  final String subtitle;
+  final double amount;
+  final double runningBalance;
+  final WorkEntry? work;
+  final Payment? payment;
+
+  const _LabourLedgerRow({
+    required this.id,
+    required this.date,
+    required this.isWork,
+    required this.title,
+    required this.subtitle,
+    required this.amount,
+    required this.runningBalance,
+    this.work,
+    this.payment,
+  });
+}
+
+class _LabourWorkDialog extends StatefulWidget {
+  final Labour labour;
+  const _LabourWorkDialog({required this.labour});
+  @override
+  State<_LabourWorkDialog> createState() => _LabourWorkDialogState();
+}
+
+class _LabourWorkDialogState extends State<_LabourWorkDialog> {
+  final List<String> _workTypes = ['Structure', 'Flooring', 'Axle/Suspension', 'Welding', 'Painting', 'Electrical', 'Rim/Tyre', 'Custom'];
+  String _selectedWorkType = 'Structure';
+  String? _selectedTrailaId;
+  String? _selectedPaymentMethod = 'Cash';
+  DateTime _selectedDate = DateTime.now();
+  final _descriptionController = TextEditingController();
+  final _costController = TextEditingController();
+  final _paymentController = TextEditingController(text: '0');
+  bool _isSaving = false;
+  WorkEntry? _savedWork;
+
+  Future<void> _handleSave() async {
+    final cost = double.tryParse(_costController.text) ?? 0;
+    final paid = double.tryParse(_paymentController.text) ?? 0;
+    
+    if (cost <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid cost')));
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      final description = _selectedWorkType == 'Custom' 
+          ? _descriptionController.text.trim()
+          : '$_selectedWorkType${_descriptionController.text.isNotEmpty ? ': ${_descriptionController.text}' : ''}';
+
+      final result = await context.read<ERPCubit>().addLabourWork(
+        widget.labour.id,
+        WorkEntry(
+          id: 'LW-${DateTime.now().millisecondsSinceEpoch}',
+          entryNumber: 'N/A',
+          trailaId: _selectedTrailaId, // Now nullable
+          description: description.isEmpty ? _selectedWorkType : description,
+          cost: cost,
+          previousOutstanding: widget.labour.remainingBalance,
+          date: _selectedDate,
+        ),
+        paymentAmount: paid > 0 ? paid : null,
+        paymentMethod: paid > 0 ? _selectedPaymentMethod : null,
+      );
+
+      setState(() => _savedWork = result);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Work Invoice Saved Successfully'), backgroundColor: Colors.green));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final trailas = context.watch<ERPCubit>().state.trailas.where((t) => t.status == TrailaStatus.pending).toList();
+    final cost = double.tryParse(_costController.text) ?? 0;
+    final prevOutstanding = widget.labour.remainingBalance;
+
+    return AlertDialog(
+      title: const Text('New Work Invoice'),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButtonFormField<String?>(
+              initialValue: _selectedTrailaId,
+              decoration: const InputDecoration(labelText: 'Select Traila (Optional)', helperText: 'Leave empty for General Work'),
+              items: [
+                const DropdownMenuItem<String?>(value: null, child: Text('None (General Expense)')),
+                ...trailas.map((t) => DropdownMenuItem<String?>(value: t.id, child: Text('${t.id} - ${t.name}'))),
+              ],
+              onChanged: _savedWork != null ? null : (v) => setState(() => _selectedTrailaId = v),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedWorkType,
+              decoration: const InputDecoration(labelText: 'Work Type'),
+              items: _workTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+              onChanged: _savedWork != null ? null : (v) => setState(() => _selectedWorkType = v!),
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: _savedWork != null ? null : () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) setState(() => _selectedDate = picked);
+              },
+              child: InputDecorator(
+                decoration: const InputDecoration(labelText: 'Work Date'),
+                child: Text(DateFormat('yyyy-MM-dd').format(_selectedDate)),
+              ),
+            ),
+            TextField(
+              controller: _descriptionController,
+              enabled: _savedWork == null,
+              decoration: InputDecoration(
+                labelText: _selectedWorkType == 'Custom' ? 'Work Description' : 'Additional Remarks (Optional)',
+                hintText: _selectedWorkType == 'Custom' ? 'Enter what work was done' : 'e.g., extra material used',
+              ),
+            ),
+            TextField(
+              controller: _costController,
+              enabled: _savedWork == null,
+              decoration: const InputDecoration(labelText: 'Job Charge / Work Price (Rs.)'),
+              keyboardType: TextInputType.number,
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _paymentController,
+                    enabled: _savedWork == null,
+                    decoration: const InputDecoration(labelText: 'Paid Now (Upfront)'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedPaymentMethod,
+                    decoration: const InputDecoration(labelText: 'Method'),
+                    items: ['Cash', 'Bank', 'Other'].map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                    onChanged: _savedWork != null ? null : (v) => setState(() => _selectedPaymentMethod = v),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+              child: Column(
+                children: [
+                  _MathRow(label: 'Prev Balance:', value: prevOutstanding),
+                  _MathRow(label: 'Work Price:', value: cost, color: Colors.blue, prefix: '+'),
+                  const Divider(),
+                  _MathRow(label: 'TOTAL:', value: prevOutstanding + cost, isBold: true),
+                  if (double.tryParse(_paymentController.text) != null && (double.tryParse(_paymentController.text)! > 0)) ...[
+                    _MathRow(label: 'Paid Upfront:', value: double.tryParse(_paymentController.text)!, color: Colors.green, prefix: '-'),
+                    const Divider(),
+                    _MathRow(label: 'NEW REMAINING BAL:', value: (prevOutstanding + cost) - double.tryParse(_paymentController.text)!, color: Colors.red, isBold: true),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context), 
+                    child: Text(_savedWork != null ? 'Close' : 'Cancel')
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (_savedWork == null)
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _handleSave,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green, 
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: _isSaving 
+                        ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+                        : const Text('Save'),
+                    ),
+                  ),
+                if (_savedWork == null) const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _savedWork == null ? null : () async {
+                      final state = context.read<ERPCubit>().state;
+                      try {
+                        final success = await ThermalPrinterService.printLabourWork(
+                          context,
+                          labour: widget.labour,
+                          work: _savedWork!,
+                          profile: state.appProfile,
+                          settings: state.printerSetting,
+                          printDuplicate: true,
+                        );
+                        if (!success && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to print.')));
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))));
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.print_outlined, size: 18),
+                    label: const Text('Print', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue, 
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _savedWork == null ? null : () {
+                      final traila = context.read<ERPCubit>().state.trailas.firstWhere((t) => t.id == _savedWork!.trailaId);
+                      _sendProfessionalWhatsAppInvoice(
+                        context: context,
+                        labour: widget.labour,
+                        trailaName: traila.name,
+                        description: _savedWork!.description,
+                        currentAmount: _savedWork!.cost,
+                        previousBalance: _savedWork!.previousOutstanding,
+                        date: _savedWork!.date,
+                      );
+                    },
+                    icon: const Icon(Icons.message_outlined, size: 18),
+                    label: const Text('WhatsApp', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal, 
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _LabourPaymentDialog extends StatefulWidget {
+  final Labour labour;
+  const _LabourPaymentDialog({required this.labour});
+  @override
+  State<_LabourPaymentDialog> createState() => _LabourPaymentDialogState();
+}
+
+class _LabourPaymentDialogState extends State<_LabourPaymentDialog> {
+  final _amountController = TextEditingController();
+  final _splitAccountControllers = <String, TextEditingController>{};
+  String _method = 'Cash';
+  DateTime _paymentDate = DateTime.now();
+  bool _isSaving = false;
+  Payment? _savedPayment;
+
+  double get _total {
+    if (_method != 'Split') {
+      return double.tryParse(_amountController.text) ?? 0;
+    }
+    double t = 0;
+    for (var ctrl in _splitAccountControllers.values) {
+      t += double.tryParse(ctrl.text) ?? 0;
+    }
+    return t;
+  }
+
+  Future<void> _handleSave() async {
+    double totalAmt = 0;
+    List<SplitDetail>? splits;
+    if (_method == 'Split') {
+      splits = [];
+      _splitAccountControllers.forEach((acc, ctrl) {
+        final val = double.tryParse(ctrl.text) ?? 0;
+        if (val > 0) {
+          splits!.add(SplitDetail(method: acc, amount: val));
+          totalAmt += val;
+        }
+      });
+    } else {
+      totalAmt = double.tryParse(_amountController.text) ?? 0;
+    }
+
+    if (totalAmt <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid amount')));
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      final result = await context.read<ERPCubit>().addLabourPayment(
+            widget.labour.id,
+            Payment(
+              id: 'PAY-${DateTime.now().millisecondsSinceEpoch}',
+              amount: totalAmt,
+              date: _paymentDate,
+              method: _method,
+              splitDetails: splits,
+            ),
+          );
+
+      setState(() => _savedPayment = result);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment Invoice Saved Successfully'), backgroundColor: Colors.green));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+      rethrow;
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<ERPCubit>().state;
+
+    return AlertDialog(
+      title: const Text('New Payment Invoice'),
+      content: SizedBox(
+        width: 400,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              InkWell(
+                onTap: _savedPayment != null ? null : () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _paymentDate,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (picked != null) setState(() => _paymentDate = picked);
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(labelText: 'Payment Date'),
+                  child: Text(DateFormat('yyyy-MM-dd').format(_paymentDate)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _method,
+                decoration: const InputDecoration(labelText: 'Payment Method'),
+                items: [...context.read<ERPCubit>().state.accounts.values.map((a) => a.name), 'Split']
+                    .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                    .toList(),
+                onChanged: _savedPayment != null ? null : (v) => setState(() => _method = v!),
+              ),
+              const SizedBox(height: 16),
+              if (_method != 'Split')
+                TextField(
+                  controller: _amountController,
+                  enabled: _savedPayment == null,
+                  decoration: const InputDecoration(labelText: 'Amount Paid (Rs.)'),
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => setState(() {}),
+                )
+              else ...[
+                const Text('Split Accounts', style: TextStyle(fontWeight: FontWeight.bold)),
+                ...state.accounts.values.map((acc) {
+                  _splitAccountControllers.putIfAbsent(acc.id, () => TextEditingController());
+                  return TextField(
+                    controller: _splitAccountControllers[acc.id],
+                    enabled: _savedPayment == null,
+                    decoration: InputDecoration(labelText: '${acc.name} Account Amount'),
+                    keyboardType: TextInputType.number,
+                    onChanged: (_) => setState(() {}),
+                  );
+                }),
+              ],
+              if (_savedPayment == null)
+                Builder(
+                  builder: (context) {
+                    final cur = widget.labour.remainingBalance;
+                    final proj = cur - _total;
+                    return Container(
+                      margin: const EdgeInsets.only(top: 14),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: proj < 0 ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: proj < 0 ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Current Balance:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                              Text(
+                                cur < 0
+                                    ? 'Advance: Rs. ${NumberFormat("#,##0").format(cur.abs())}'
+                                    : 'Due: Rs. ${NumberFormat("#,##0").format(cur)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: cur < 0 ? const Color(0xFF16A34A) : const Color(0xFFB91C1C),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Payment To Deduct:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                              Text(
+                                '- Rs. ${NumberFormat("#,##0").format(_total)}',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('New Balance:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              _buildLabourBalanceBadge(proj),
+                            ],
+                          ),
+                          if (proj < 0) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.info_outline, size: 14, color: Color(0xFF15803D)),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Advance Wage Paid: Worker is receiving Rs. ${NumberFormat("#,##0").format(proj.abs())} in advance. This will deduct from upcoming work.',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF14532D)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context), 
+                    child: Text(_savedPayment != null ? 'Close' : 'Cancel')
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (_savedPayment == null)
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _handleSave,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green, 
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: _isSaving 
+                        ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
+                        : const Text('Save'),
+                    ),
+                  ),
+                if (_savedPayment == null) const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _savedPayment == null ? null : () async {
+                      final prev = _savedPayment!.previousBalance ?? 0;
+                      final remaining = _savedPayment!.updatedBalance ?? 0;
+
+                      try {
+                        final success = await ThermalPrinterService.printLabourPayment(
+                          context,
+                          labour: widget.labour,
+                          payment: _savedPayment!,
+                          previousBalance: prev,
+                          newBalance: remaining,
+                          profile: state.appProfile,
+                          settings: state.printerSetting,
+                          printDuplicate: true,
+                        );
+                        if (!success && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to print payment.')));
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))));
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.print_outlined, size: 18),
+                    label: const Text('Print', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue, 
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _savedPayment == null ? null : () {
+                      _sendProfessionalWhatsAppPaymentInvoice(
+                        context: context,
+                        labour: widget.labour,
+                        amount: _savedPayment!.amount,
+                        method: _savedPayment!.method,
+                        previousBalance: _savedPayment!.previousBalance ?? 0,
+                        remainingBalance: _savedPayment!.updatedBalance ?? 0,
+                        date: _savedPayment!.date,
+                      );
+                    },
+                    icon: const Icon(Icons.message_outlined, size: 18),
+                    label: const Text('WhatsApp', style: TextStyle(fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal, 
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _EditLabourDialog extends StatefulWidget {
+  final Labour labour;
+  const _EditLabourDialog({required this.labour});
+  @override
+  State<_EditLabourDialog> createState() => _EditLabourDialogState();
+}
+
+class _EditLabourDialogState extends State<_EditLabourDialog> {
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _whatsappController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _openingBalanceController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.text = widget.labour.name;
+    _phoneController.text = widget.labour.phone;
+    _whatsappController.text = widget.labour.whatsappNumber;
+    _addressController.text = widget.labour.address;
+    _openingBalanceController.text = widget.labour.openingBalance.toStringAsFixed(0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Labourer Profile'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Name')),
+          TextField(controller: _phoneController, decoration: const InputDecoration(labelText: 'Phone')),
+          TextField(controller: _whatsappController, decoration: const InputDecoration(labelText: 'WhatsApp Number')),
+          TextField(controller: _addressController, decoration: const InputDecoration(labelText: 'Address')),
+          TextField(
+            controller: _openingBalanceController, 
+            decoration: const InputDecoration(labelText: 'Opening Balance', prefixText: 'Rs. '),
+            keyboardType: TextInputType.number,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        ElevatedButton(
+          onPressed: () async {
+            final updated = widget.labour.copyWith(
+              name: _nameController.text,
+              phone: _phoneController.text,
+              whatsappNumber: _whatsappController.text,
+              address: _addressController.text,
+              openingBalance: double.tryParse(_openingBalanceController.text) ?? 0.0,
+            );
+            await context.read<ERPCubit>().updateLabour(updated);
+            if (!context.mounted) return;
+            Navigator.pop(context);
+          },
+          child: const Text('Save Changes'),
+        ),
+      ],
+    );
+  }
+}
+
+void _sendProfessionalWhatsAppInvoice({
+  required BuildContext context,
+  required Labour labour,
+  required String trailaName,
+  required String description,
+  required double currentAmount,
+  required double previousBalance,
+  required DateTime date,
+}) async {
+  final totalBalance = previousBalance + currentAmount;
+  final formattedDate = DateFormat('dd-MM-yyyy').format(date);
+  final profile = context.read<ERPCubit>().state.appProfile;
+  
+  try {
+    await WhatsAppService.sendLabourWorkReceipt(
+      phone: labour.whatsappNumber.isNotEmpty ? labour.whatsappNumber : labour.phone,
+      labourName: labour.name,
+      date: formattedDate,
+      trailaId: trailaName, // Using trailaName as trailaId for display
+      workPrice: currentAmount,
+      previousBalance: previousBalance,
+      newBalance: totalBalance,
+      profile: profile,
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    String message = e.toString();
+    if (message.startsWith('Exception: ')) {
+      message = message.substring(11);
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+void _sendProfessionalWhatsAppPaymentInvoice({
+  required BuildContext context,
+  required Labour labour,
+  required double amount,
+  required String method,
+  required double previousBalance,
+  required double remainingBalance,
+  required DateTime date,
+}) async {
+  final formattedDate = DateFormat('dd-MM-yyyy').format(date);
+  final profile = context.read<ERPCubit>().state.appProfile;
+  
+  try {
+    await WhatsAppService.sendLabourPaymentReceipt(
+      phone: labour.whatsappNumber.isNotEmpty ? labour.whatsappNumber : labour.phone,
+      labourName: labour.name,
+      date: formattedDate,
+      paymentMethod: method,
+      paidAmount: amount,
+      previousBalance: previousBalance,
+      newBalance: remainingBalance,
+      profile: profile,
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    String message = e.toString();
+    if (message.startsWith('Exception: ')) {
+      message = message.substring(11);
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _MathRow extends StatelessWidget {
+  final String label;
+  final double value;
+  final String prefix;
+  final bool isBold;
+  final Color? color;
+
+  const _MathRow({
+    required this.label, 
+    required this.value, 
+    this.prefix = '', 
+    this.isBold = false,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(
+                  fontWeight: isBold ? FontWeight.bold : null,
+                  fontSize: isBold ? 14 : 12,
+                  color: isBold ? Colors.black87 : Colors.grey.shade700,
+                )),
+              ],
+            ),
+          ),
+          Text(
+            '$prefix Rs. ${value.toStringAsFixed(0)}',
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+              fontSize: isBold ? 14 : 12,
+              color: color ?? (isBold ? Colors.blue.shade900 : Colors.black87),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
